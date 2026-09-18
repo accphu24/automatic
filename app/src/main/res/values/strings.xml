@@ -6,4 +6,44 @@
     <string name="toast_service_not_enabled">Chưa bật quyền Accessibility</string>
     <string name="status_service_enabled">Trạng thái quyền: Đã bật</string>
     <string name="status_service_disabled">Trạng thái quyền: Chưa bật</string>
+
+    <!-- Man hinh tao kich ban -->
+    <string name="title_script_editor">Tạo kịch bản mới</string>
+    <string name="hint_script_name">Tên kịch bản</string>
+    <string name="btn_add_step">+ Thêm bước</string>
+    <string name="btn_save_script">Lưu kịch bản</string>
+    <string name="toast_need_script_name">Ruby chưa đặt tên cho kịch bản</string>
+    <string name="toast_need_at_least_one_step">Kịch bản cần ít nhất 1 bước</string>
+
+    <string name="title_choose_step_type">Chọn loại bước</string>
+    <string name="title_step_details">Chi tiết bước</string>
+    <string name="title_edit_step">Sửa bước</string>
+    <string name="btn_save">Lưu</string>
+    <string name="btn_cancel">Hủy</string>
+
+    <string name="step_type_open_app">Mở app</string>
+    <string name="step_type_wait">Đợi</string>
+    <string name="step_type_tap">Bấm vào 1 nút/ô</string>
+    <string name="step_type_check_text">Kiểm tra nội dung 1 ô</string>
+    <string name="step_type_check_exists">Kiểm tra có xuất hiện trên màn hình</string>
+    <string name="step_type_notify">Báo động (rung/chuông)</string>
+
+    <string name="label_package_name">Tên gói app (package name)</string>
+    <string name="label_wait_seconds">Số giây cần đợi</string>
+    <string name="label_find_by">Tìm theo</string>
+    <string name="label_value">Chữ hiển thị hoặc ID kỹ thuật</string>
+    <string name="hint_value_tap">VD: Gửi</string>
+    <string name="hint_value_check">VD: Đã gửi</string>
+    <string name="label_expected_value">Giá trị mong đợi (so sánh với nội dung đọc được)</string>
+    <string name="label_fallback_coordinates">Tọa độ dự phòng nếu không tìm thấy (không bắt buộc)</string>
+    <string name="label_vibrate">Rung</string>
+    <string name="label_sound">Phát âm thanh thông báo</string>
+    <string name="label_message">Nội dung báo động</string>
+    <string name="label_on_fail">Nếu bước này thất bại thì</string>
+
+    <string name="by_text">Chữ hiển thị</string>
+    <string name="by_view_id">ID kỹ thuật</string>
+    <string name="on_fail_stop">Dừng kịch bản (mặc định)</string>
+    <string name="on_fail_prefix">Nhảy tới:</string>
+    <string name="on_fail_note_prefix">nếu lỗi</string>
 </resources>

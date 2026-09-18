@@ -50,4 +50,7 @@ dependencies {
 
     // Coroutine - de bo may chay kich ban co the "doi" (WAIT) ma khong lam dung luong
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1"
+
+    // Gson - chuyen doi kich ban (List<ScriptStep>) sang JSON de luu vao Room
+    implementation "com.google.code.gson:gson:2.11.0"
 }
