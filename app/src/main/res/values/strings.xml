@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">TuyTam AutoMacro</string>
+    <string name="accessibility_service_description">Cho phép AutoMacro tự động bấm, vuốt và mở ứng dụng theo kịch bản bạn tạo. Chỉ hoạt động khi bạn bật kịch bản.</string>
+    <string name="btn_open_accessibility_settings">Bật quyền Accessibility</string>
+    <string name="status_service_enabled">Trạng thái quyền: Đã bật</string>
+    <string name="status_service_disabled">Trạng thái quyền: Chưa bật</string>
+</resources>

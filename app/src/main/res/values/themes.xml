@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.AutoMacro" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#6C63FF</item>
+        <item name="colorPrimaryVariant">#4A42D6</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+    </style>
+</resources>
