@@ -4,8 +4,10 @@ import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
 import android.text.TextUtils
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.tuytam.automacro.data.SampleScripts
 import com.tuytam.automacro.databinding.ActivityMainBinding
 import com.tuytam.automacro.service.AutoAccessibilityService
 
@@ -23,6 +25,16 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnOpenAccessibilitySettings.setOnClickListener {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+
+        binding.btnRunSample.setOnClickListener {
+            val service = AutoAccessibilityService.instance
+            if (service == null) {
+                Toast.makeText(this, getString(R.string.toast_service_not_enabled), Toast.LENGTH_SHORT).show()
+            } else {
+                service.runScript(SampleScripts.sendMessageExample)
+                Toast.makeText(this, "Đang chạy kịch bản mẫu...", Toast.LENGTH_SHORT).show()
+            }
         }
 
         binding.fabAddScript.setOnClickListener {

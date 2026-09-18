@@ -47,4 +47,7 @@ dependencies {
 
     // Lifecycle
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.8.4"
+
+    // Coroutine - de bo may chay kich ban co the "doi" (WAIT) ma khong lam dung luong
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1"
 }
