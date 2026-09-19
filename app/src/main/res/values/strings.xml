@@ -27,9 +27,18 @@
     <string name="step_type_open_app">Mở app</string>
     <string name="step_type_wait">Đợi</string>
     <string name="step_type_tap">Bấm vào 1 nút/ô</string>
+    <string name="step_type_swipe">Vuốt</string>
     <string name="step_type_check_text">Kiểm tra nội dung 1 ô</string>
     <string name="step_type_check_exists">Kiểm tra có xuất hiện trên màn hình</string>
     <string name="step_type_notify">Báo động (rung/chuông)</string>
+
+    <string name="label_swipe_from">Vuốt từ tọa độ</string>
+    <string name="label_swipe_to">Đến tọa độ</string>
+
+    <string name="overlay_header_label">Đang ghi — bấm để dừng</string>
+    <string name="overlay_no_action_yet">Chưa có hành động nào…</string>
+    <string name="picker_prompt_start">Chạm vào điểm BẮT ĐẦU của cú vuốt</string>
+    <string name="picker_prompt_end">Chạm vào điểm KẾT THÚC của cú vuốt</string>
 
     <string name="label_package_name">Tên gói app (package name)</string>
     <string name="label_wait_seconds">Số giây cần đợi</string>
