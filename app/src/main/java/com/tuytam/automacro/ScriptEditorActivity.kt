@@ -16,6 +16,7 @@ import com.tuytam.automacro.data.ScriptJson
 import com.tuytam.automacro.data.ScriptRepository
 import com.tuytam.automacro.data.ScriptStep
 import com.tuytam.automacro.data.StepType
+import com.tuytam.automacro.data.summarizeStep
 import com.tuytam.automacro.databinding.ActivityScriptEditorBinding
 import com.tuytam.automacro.databinding.ItemStepRowBinding
 import kotlinx.coroutines.launch
@@ -83,6 +84,7 @@ class ScriptEditorActivity : AppCompatActivity() {
             StepType.OPEN_APP to getString(R.string.step_type_open_app),
             StepType.WAIT to getString(R.string.step_type_wait),
             StepType.TAP to getString(R.string.step_type_tap),
+            StepType.SWIPE to getString(R.string.step_type_swipe),
             StepType.CHECK_TEXT to getString(R.string.step_type_check_text),
             StepType.CHECK_EXISTS to getString(R.string.step_type_check_exists),
             StepType.NOTIFY to getString(R.string.step_type_notify)
@@ -103,6 +105,7 @@ class ScriptEditorActivity : AppCompatActivity() {
             StepType.OPEN_APP -> R.layout.dialog_step_open_app
             StepType.WAIT -> R.layout.dialog_step_wait
             StepType.TAP -> R.layout.dialog_step_tap
+            StepType.SWIPE -> R.layout.dialog_step_swipe
             StepType.CHECK_TEXT -> R.layout.dialog_step_check_text
             StepType.CHECK_EXISTS -> R.layout.dialog_step_check_exists
             StepType.NOTIFY -> R.layout.dialog_step_notify
@@ -132,6 +135,12 @@ class ScriptEditorActivity : AppCompatActivity() {
                     val idx = byOptions.indexOfFirst { it.first == step.params["by"] }
                     if (idx >= 0) spinnerByView?.setSelection(idx)
                 }
+                StepType.SWIPE -> {
+                    typeView.findViewById<EditText>(R.id.etFromX).setText(step.params["fromX"])
+                    typeView.findViewById<EditText>(R.id.etFromY).setText(step.params["fromY"])
+                    typeView.findViewById<EditText>(R.id.etToX).setText(step.params["toX"])
+                    typeView.findViewById<EditText>(R.id.etToY).setText(step.params["toY"])
+                }
                 StepType.CHECK_TEXT -> {
                     typeView.findViewById<EditText>(R.id.etValue).setText(step.params["value"])
                     typeView.findViewById<EditText>(R.id.etExpected).setText(step.params["expected"])
@@ -154,7 +163,7 @@ class ScriptEditorActivity : AppCompatActivity() {
         // Danh sach "neu loi thi..." la TOAN BO cac buoc hien co, tru chinh buoc dang sua
         val otherSteps = steps.filterIndexed { idx, _ -> idx != editIndex }
         val onFailChoices = mutableListOf(getString(R.string.on_fail_stop))
-        onFailChoices.addAll(otherSteps.map { "${getString(R.string.on_fail_prefix)} ${summarize(it)}" })
+        onFailChoices.addAll(otherSteps.map { "${getString(R.string.on_fail_prefix)} ${summarizeStep(it)}" })
         val spinnerOnFail = onFailView.findViewById<Spinner>(R.id.spinnerOnFail)
         spinnerOnFail.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, onFailChoices)
         val currentFailSelection = otherSteps.indexOfFirst { it.id == existingStep?.onFail }
@@ -185,6 +194,12 @@ class ScriptEditorActivity : AppCompatActivity() {
                         val fy = typeView.findViewById<EditText>(R.id.etFallbackY).text.toString().trim()
                         if (fx.isNotBlank()) params["fallbackX"] = fx
                         if (fy.isNotBlank()) params["fallbackY"] = fy
+                    }
+                    StepType.SWIPE -> {
+                        params["fromX"] = typeView.findViewById<EditText>(R.id.etFromX).text.toString().trim()
+                        params["fromY"] = typeView.findViewById<EditText>(R.id.etFromY).text.toString().trim()
+                        params["toX"] = typeView.findViewById<EditText>(R.id.etToX).text.toString().trim()
+                        params["toY"] = typeView.findViewById<EditText>(R.id.etToY).text.toString().trim()
                     }
                     StepType.CHECK_TEXT -> {
                         val bySpinner = typeView.findViewById<Spinner>(R.id.spinnerBy)
@@ -223,9 +238,9 @@ class ScriptEditorActivity : AppCompatActivity() {
         steps.forEachIndexed { index, step ->
             val row = ItemStepRowBinding.inflate(layoutInflater, binding.containerSteps, false)
             val failNote = step.onFail?.let { failId ->
-                steps.find { it.id == failId }?.let { "  → ${getString(R.string.on_fail_note_prefix)}: ${summarize(it)}" }
+                steps.find { it.id == failId }?.let { "  → ${getString(R.string.on_fail_note_prefix)}: ${summarizeStep(it)}" }
             } ?: ""
-            row.tvStepSummary.text = "${index + 1}. ${summarize(step)}$failNote"
+            row.tvStepSummary.text = "${index + 1}. ${summarizeStep(step)}$failNote"
             row.root.setOnClickListener {
                 showStepFormDialog(step.type, existingStep = step, editIndex = index)
             }
@@ -234,17 +249,6 @@ class ScriptEditorActivity : AppCompatActivity() {
                 refreshStepList()
             }
             binding.containerSteps.addView(row.root)
-        }
-    }
-
-    private fun summarize(step: ScriptStep): String {
-        return when (step.type) {
-            StepType.OPEN_APP -> "Mở app ${step.params["packageName"]}"
-            StepType.WAIT -> "Đợi ${step.params["seconds"]} giây"
-            StepType.TAP -> "Bấm \"${step.params["value"]}\""
-            StepType.CHECK_TEXT -> "Kiểm tra \"${step.params["value"]}\" = \"${step.params["expected"]}\""
-            StepType.CHECK_EXISTS -> "Kiểm tra có \"${step.params["value"]}\" trên màn hình"
-            StepType.NOTIFY -> "Báo động: ${step.params["message"]}"
         }
     }
 }

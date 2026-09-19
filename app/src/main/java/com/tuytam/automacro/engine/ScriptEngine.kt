@@ -62,10 +62,21 @@ class ScriptEngine(private val service: AutoAccessibilityService) {
             StepType.OPEN_APP -> openApp(step.params["packageName"])
             StepType.WAIT -> wait(step.params["seconds"])
             StepType.TAP -> tap(step.params)
+            StepType.SWIPE -> swipe(step.params)
             StepType.CHECK_TEXT -> checkText(step.params)
             StepType.CHECK_EXISTS -> checkExists(step.params)
             StepType.NOTIFY -> notify(step.params)
         }
+    }
+
+    private fun swipe(params: Map<String, String>): Boolean {
+        val fromX = params["fromX"]?.toFloatOrNull() ?: return false
+        val fromY = params["fromY"]?.toFloatOrNull() ?: return false
+        val toX = params["toX"]?.toFloatOrNull() ?: return false
+        val toY = params["toY"]?.toFloatOrNull() ?: return false
+        val duration = params["durationMs"]?.toLongOrNull() ?: 300L
+        service.performSwipe(fromX, fromY, toX, toY, duration)
+        return true
     }
 
     private fun openApp(packageName: String?): Boolean {
