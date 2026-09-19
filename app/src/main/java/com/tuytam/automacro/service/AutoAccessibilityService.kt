@@ -12,6 +12,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
+import android.widget.FrameLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import com.tuytam.automacro.R
@@ -37,22 +38,32 @@ import kotlin.math.abs
  * (co danh so thu tu) de biet dang ghi dung khong -> bam lai vao dau bong
  * bong (khong keo) de dung, mo thang sang man hinh sua kich ban.
  *
- * Rieng buoc VUOT: Android khong cho biet toa do ngon tay that khi vuot,
- * nen KHONG doan tu dong - thay vao do co nut ➕ tren bong bong de Ruby tu
- * cham 2 diem that (dau va cuoi) tren man hinh, ghep thanh 1 duong thang
- * chinh xac.
+ * 2 nut tren bong bong de tu tay danh dau khi tu dong khong bat duoc:
+ *   👆 = danh dau 1 diem de Bam (dung khi bam-tu-dong khong ghi nhan duoc,
+ *        vi du: nut Gui nam TREN BAN PHIM chu khong phai tren man hinh app)
+ *   ➕ = danh dau 2 diem (dau/cuoi) de tao buoc Vuot chinh xac
+ * Ca 2 deu hien 1 cham mau tai dung vi tri vua cham de xac nhan bang mat.
  *
- * GIOI HAN cua ban ghi nay:
- * - Bam vao nut/thanh phan co CHU hoac co ID -> ghi tu dong, chinh xac.
- * - Vuot -> phai chu dong bam nut ➕ roi cham 2 diem (khong tu dong ghi
- *   khi Ruby tu vuot tay, vi khong doc duoc toa do that).
- * - CHUA ghi duoc: go chu vao o nhap, cac buoc Kiem tra/Bao dong (Ruby van
- *   can tu them tay sau khi ghi, dung "+ Them buoc" nhu cu).
+ * GIOI HAN cua ban ghi tu dong (khong qua nut thu cong o tren):
+ * - Chi bat duoc thao tac bam vao nut/thanh phan co CHU hoac co ID tren
+ *   MAN HINH APP. KHONG bat duoc: go chu vao o nhap, bam nut Gui/Enter
+ *   tren ban phim (day la gioi han that cua Android, khong sua duoc bang
+ *   code app nay) - nhung truong hop nay dung nut 👆 de thay the.
  */
 class AutoAccessibilityService : AccessibilityService() {
 
     private val serviceJob = Job()
     private val serviceScope = CoroutineScope(Dispatchers.Default + serviceJob)
+
+    // Cac goi he thong khong tinh la "mo app" khi ghi (ban phim, thanh trang thai...)
+    private val ignoredPackages = setOf(
+        "com.android.systemui",
+        "com.samsung.android.honeyboard",
+        "com.google.android.inputmethod.latin",
+        "com.android.inputmethod.latin",
+        "com.touchtype.swiftkey",
+        "com.samsung.android.app.smartcapture"
+    )
 
     // --- Trang thai ghi kich ban ---
     private var isRecording = false
@@ -66,7 +77,7 @@ class AutoAccessibilityService : AccessibilityService() {
     private var overlayParams: WindowManager.LayoutParams? = null
     private var windowManager: WindowManager? = null
 
-    // --- Man hinh chon diem (dung khi bam nut ➕ de danh dau vuot) ---
+    // --- Man hinh chon diem (dung khi bam nut 👆/➕) ---
     private var pickerView: View? = null
 
     companion object {
@@ -93,7 +104,7 @@ class AutoAccessibilityService : AccessibilityService() {
         when (event.eventType) {
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
                 val pkg = event.packageName?.toString()
-                if (!pkg.isNullOrBlank() && pkg != lastPackageName) {
+                if (!pkg.isNullOrBlank() && pkg != lastPackageName && pkg !in ignoredPackages) {
                     maybeInsertWaitStep(now)
                     addRecordedStep(StepType.OPEN_APP, mapOf("packageName" to pkg))
                     lastPackageName = pkg
@@ -104,18 +115,17 @@ class AutoAccessibilityService : AccessibilityService() {
                 val text = event.text?.joinToString(" ")?.trim()?.takeIf { it.isNotBlank() }
                 val source = event.source
                 val viewId = source?.viewIdResourceName
-                val added = when {
-                    !text.isNullOrBlank() -> {
-                        addRecordedStep(StepType.TAP, mapOf("by" to "text", "value" to text)); true
-                    }
-                    !viewId.isNullOrBlank() -> {
-                        addRecordedStep(StepType.TAP, mapOf("by" to "viewId", "value" to viewId)); true
-                    }
-                    else -> false
+                val tapParams = when {
+                    !text.isNullOrBlank() -> mapOf("by" to "text", "value" to text)
+                    !viewId.isNullOrBlank() -> mapOf("by" to "viewId", "value" to viewId)
+                    else -> null
                 }
                 source?.recycle()
-                if (added) {
+                // Chen Doi (neu can) TRUOC khi ghi buoc Bam, khong phai sau -
+                // de thu tu buoc dung nhu thuc te da xay ra.
+                if (tapParams != null) {
                     maybeInsertWaitStep(now)
+                    addRecordedStep(StepType.TAP, tapParams)
                     lastEventTimeMs = now
                 }
             }
@@ -220,7 +230,7 @@ class AutoAccessibilityService : AccessibilityService() {
         var dragged = false
 
         // Chi gan cam ung keo/dung vao PHAN DAU (dau tron + nhan chu) - de vung
-        // danh sach ben duoi cuon binh thuong, va nut ➕ tu xu ly rieng cu bam cua no.
+        // danh sach ben duoi cuon binh thuong, va 2 nut 👆/➕ tu xu ly rieng cu bam cua chung.
         val header = view.findViewById<View>(R.id.overlayHeader)
         header.setOnTouchListener { _, motionEvent ->
             when (motionEvent.action) {
@@ -249,6 +259,17 @@ class AutoAccessibilityService : AccessibilityService() {
                     true
                 }
                 else -> false
+            }
+        }
+
+        view.findViewById<View>(R.id.btnAddTapPoint).setOnClickListener {
+            startTapPointPicking { x, y ->
+                maybeInsertWaitStep(System.currentTimeMillis())
+                addRecordedStep(
+                    StepType.TAP,
+                    mapOf("fallbackX" to x.toInt().toString(), "fallbackY" to y.toInt().toString())
+                )
+                lastEventTimeMs = System.currentTimeMillis()
             }
         }
 
@@ -288,37 +309,26 @@ class AutoAccessibilityService : AccessibilityService() {
         startActivity(intent)
     }
 
-    // ----------------- CHON 2 DIEM TREN MAN HINH (cho buoc Vuot) -----------------
+    // ----------------- CHON DIEM TREN MAN HINH (co dau cham xac nhan) -----------------
 
-    /** Cham diem DAU -> doi chu -> cham diem CUOI -> tra ve 4 toa do qua onComplete */
-    private fun startSwipePointPicking(onComplete: (fromX: Float, fromY: Float, toX: Float, toY: Float) -> Unit) {
-        startPointPicking(getString(R.string.picker_prompt_start)) { x1, y1 ->
-            startPointPicking(getString(R.string.picker_prompt_end)) { x2, y2 ->
-                onComplete(x1, y1, x2, y2)
-            }
-        }
-    }
-
-    private fun startPointPicking(promptText: String, onPicked: (Float, Float) -> Unit) {
+    /** Danh dau 1 diem - dung cho nut 👆 (Bam) */
+    private fun startTapPointPicking(onComplete: (x: Float, y: Float) -> Unit) {
         val wm = getSystemService(WINDOW_SERVICE) as WindowManager
         val view = LayoutInflater.from(this).inflate(R.layout.overlay_point_picker, null)
-        view.findViewById<TextView>(R.id.tvPickerPrompt).text = promptText
+        view.findViewById<TextView>(R.id.tvPickerPrompt).text = getString(R.string.picker_prompt_tap)
+        val marker = view.findViewById<View>(R.id.pickerMarkerStart)
 
-        val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-            PixelFormat.TRANSLUCENT
-        )
+        val params = pickerWindowParams()
 
         view.setOnTouchListener { _, motionEvent ->
             if (motionEvent.action == MotionEvent.ACTION_DOWN) {
                 val x = motionEvent.rawX
                 val y = motionEvent.rawY
-                wm.removeView(view)
-                if (pickerView == view) pickerView = null
-                onPicked(x, y)
+                placeMarker(marker, x, y)
+                view.postDelayed({
+                    removePickerView(wm, view)
+                    onComplete(x, y)
+                }, 350)
             }
             true
         }
@@ -327,14 +337,75 @@ class AutoAccessibilityService : AccessibilityService() {
         pickerView = view
     }
 
+    /** Danh dau 2 diem lien tiep (dau roi cuoi), ca 2 cham cung hien tren 1 man hinh - dung cho nut ➕ (Vuot) */
+    private fun startSwipePointPicking(onComplete: (fromX: Float, fromY: Float, toX: Float, toY: Float) -> Unit) {
+        val wm = getSystemService(WINDOW_SERVICE) as WindowManager
+        val view = LayoutInflater.from(this).inflate(R.layout.overlay_point_picker, null)
+        val promptView = view.findViewById<TextView>(R.id.tvPickerPrompt)
+        val markerStart = view.findViewById<View>(R.id.pickerMarkerStart)
+        val markerEnd = view.findViewById<View>(R.id.pickerMarkerEnd)
+        promptView.text = getString(R.string.picker_prompt_start)
+
+        val params = pickerWindowParams()
+        var firstPoint: Pair<Float, Float>? = null
+
+        view.setOnTouchListener { _, motionEvent ->
+            if (motionEvent.action == MotionEvent.ACTION_DOWN) {
+                val x = motionEvent.rawX
+                val y = motionEvent.rawY
+                val first = firstPoint
+                if (first == null) {
+                    firstPoint = x to y
+                    placeMarker(markerStart, x, y)
+                    promptView.text = getString(R.string.picker_prompt_end)
+                } else {
+                    placeMarker(markerEnd, x, y)
+                    view.postDelayed({
+                        removePickerView(wm, view)
+                        onComplete(first.first, first.second, x, y)
+                    }, 400)
+                }
+            }
+            true
+        }
+
+        wm.addView(view, params)
+        pickerView = view
+    }
+
+    private fun pickerWindowParams(): WindowManager.LayoutParams {
+        return WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT
+        )
+    }
+
+    /** Dat 1 cham danh dau tai dung toa do (x, y) vua cham, de nguoi dung thay ro da cham dung cho */
+    private fun placeMarker(marker: View, x: Float, y: Float) {
+        val size = marker.layoutParams.width.takeIf { it > 0 }
+            ?: (26 * resources.displayMetrics.density).toInt()
+        val lp = marker.layoutParams as FrameLayout.LayoutParams
+        lp.leftMargin = (x - size / 2).toInt()
+        lp.topMargin = (y - size / 2).toInt()
+        marker.layoutParams = lp
+        marker.visibility = View.VISIBLE
+    }
+
+    private fun removePickerView(wm: WindowManager, view: View) {
+        try {
+            wm.removeView(view)
+        } catch (e: Exception) {
+            // Da bi go truoc do (VD: service bi ngat giua chung), bo qua
+        }
+        if (pickerView == view) pickerView = null
+    }
+
     private fun hidePicker() {
         val view = pickerView ?: return
-        try {
-            (getSystemService(WINDOW_SERVICE) as WindowManager).removeView(view)
-        } catch (e: Exception) {
-            // Da bi go truoc do, bo qua
-        }
-        pickerView = null
+        removePickerView(getSystemService(WINDOW_SERVICE) as WindowManager, view)
     }
 
     // ----------------- CAC HAM MO PHONG THAO TAC (dung boi ScriptEngine) -----------------

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="230dp"
+    android:layout_width="250dp"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:background="@drawable/bg_overlay_panel"
@@ -14,36 +14,49 @@
         android:orientation="horizontal">
 
         <TextView
-            android:layout_width="26dp"
-            android:layout_height="26dp"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
             android:background="@drawable/bg_overlay_bubble"
             android:gravity="center"
             android:text="⏺"
             android:textColor="#FFFFFF"
-            android:textSize="13sp" />
+            android:textSize="12sp" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="6dp"
             android:layout_weight="1"
             android:text="@string/overlay_header_label"
             android:textColor="#FFFFFF"
-            android:textSize="11sp"
+            android:textSize="10sp"
             android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/btnAddTapPoint"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/bg_overlay_tap"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:text="👆"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp" />
+
+        <TextView
             android:id="@+id/btnAddSwipePoint"
-            android:layout_width="26dp"
-            android:layout_height="26dp"
-            android:layout_marginStart="6dp"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginStart="4dp"
             android:background="@drawable/bg_overlay_add"
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
             android:text="➕"
             android:textColor="#FFFFFF"
-            android:textSize="13sp" />
+            android:textSize="12sp" />
 
     </LinearLayout>
 

@@ -16,4 +16,20 @@
         android:textSize="14sp"
         android:textStyle="bold" />
 
+    <View
+        android:id="@+id/pickerMarkerStart"
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:layout_gravity="top|start"
+        android:background="@drawable/bg_marker_start"
+        android:visibility="gone" />
+
+    <View
+        android:id="@+id/pickerMarkerEnd"
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:layout_gravity="top|start"
+        android:background="@drawable/bg_marker_end"
+        android:visibility="gone" />
+
 </FrameLayout>

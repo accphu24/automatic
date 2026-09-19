@@ -39,6 +39,7 @@
     <string name="overlay_no_action_yet">Chưa có hành động nào…</string>
     <string name="picker_prompt_start">Chạm vào điểm BẮT ĐẦU của cú vuốt</string>
     <string name="picker_prompt_end">Chạm vào điểm KẾT THÚC của cú vuốt</string>
+    <string name="picker_prompt_tap">Chạm vào vị trí muốn bấm</string>
 
     <string name="label_package_name">Tên gói app (package name)</string>
     <string name="label_wait_seconds">Số giây cần đợi</string>
