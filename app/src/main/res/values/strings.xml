@@ -3,6 +3,9 @@
     <string name="accessibility_service_description">Cho phép AutoMacro tự động bấm, vuốt và mở ứng dụng theo kịch bản bạn tạo. Chỉ hoạt động khi bạn bật kịch bản.</string>
     <string name="btn_open_accessibility_settings">Bật quyền Accessibility</string>
     <string name="btn_run_sample">Chạy kịch bản mẫu (test)</string>
+    <string name="btn_record_script">🔴 Ghi kịch bản mới (record)</string>
+    <string name="toast_recording_started">Đang ghi... Mở app cần tự động hóa và thao tác bình thường. Bấm vào chấm đỏ nổi trên màn hình khi xong để dừng.</string>
+    <string name="toast_recording_empty">Không ghi được bước nào — thử mở app và bấm nút chậm hơn 1 chút, hoặc app đó có thể không hỗ trợ Accessibility đầy đủ.</string>
     <string name="toast_service_not_enabled">Chưa bật quyền Accessibility</string>
     <string name="status_service_enabled">Trạng thái quyền: Đã bật</string>
     <string name="status_service_disabled">Trạng thái quyền: Chưa bật</string>

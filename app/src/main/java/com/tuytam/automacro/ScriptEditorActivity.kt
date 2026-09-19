@@ -12,6 +12,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.tuytam.automacro.data.AppDatabase
+import com.tuytam.automacro.data.ScriptJson
 import com.tuytam.automacro.data.ScriptRepository
 import com.tuytam.automacro.data.ScriptStep
 import com.tuytam.automacro.data.StepType
@@ -24,10 +25,17 @@ import kotlinx.coroutines.launch
  * (khong can go code), bam vao 1 buoc da them de sua lai (ke ca doi
  * "neu loi thi nhay toi buoc nao" sang mot buoc them SAU do).
  *
+ * Neu duoc mo tu ban GHI (AutoAccessibilityService.startRecording), man hinh
+ * se tu nap san cac buoc da ghi duoc qua extra EXTRA_RECORDED_STEPS_JSON.
+ *
  * Luu y pham vi hien tai: chi tao kich ban MOI, chua ho tro mo lai
  * 1 kich ban DA LUU tu truoc de sua (se lam o buoc sau neu can).
  */
 class ScriptEditorActivity : AppCompatActivity() {
+
+    companion object {
+        const val EXTRA_RECORDED_STEPS_JSON = "recorded_steps_json"
+    }
 
     private lateinit var binding: ActivityScriptEditorBinding
     private val repository by lazy { ScriptRepository(AppDatabase.getInstance(this).scriptDao()) }
@@ -38,6 +46,18 @@ class ScriptEditorActivity : AppCompatActivity() {
         binding = ActivityScriptEditorBinding.inflate(layoutInflater)
         setContentView(binding.root)
         title = getString(R.string.title_script_editor)
+
+        val recordedJson = intent.getStringExtra(EXTRA_RECORDED_STEPS_JSON)
+        if (!recordedJson.isNullOrBlank()) {
+            val loaded = ScriptJson.jsonToSteps(recordedJson)
+            steps.addAll(loaded)
+            refreshStepList()
+            if (loaded.isNotEmpty()) {
+                Toast.makeText(this, "Đã nạp ${loaded.size} bước từ bản ghi", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, getString(R.string.toast_recording_empty), Toast.LENGTH_LONG).show()
+            }
+        }
 
         binding.btnAddStep.setOnClickListener { showAddStepDialog() }
 
@@ -98,7 +118,7 @@ class ScriptEditorActivity : AppCompatActivity() {
         spinnerByView?.adapter =
             ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, byOptions.map { it.second })
 
-        // Neu dang SUA 1 buoc co san: dien lai cac gia tri cu vao form
+        // Neu dang SUA 1 buoc co san (hoac buoc do den tu ban ghi): dien lai gia tri cu vao form
         existingStep?.let { step ->
             when (type) {
                 StepType.OPEN_APP ->
@@ -131,8 +151,7 @@ class ScriptEditorActivity : AppCompatActivity() {
             }
         }
 
-        // Danh sach "neu loi thi..." la TOAN BO cac buoc hien co (ca truoc lan sau buoc nay),
-        // tru chinh buoc dang sua - de tranh tu tro vao chinh no.
+        // Danh sach "neu loi thi..." la TOAN BO cac buoc hien co, tru chinh buoc dang sua
         val otherSteps = steps.filterIndexed { idx, _ -> idx != editIndex }
         val onFailChoices = mutableListOf(getString(R.string.on_fail_stop))
         onFailChoices.addAll(otherSteps.map { "${getString(R.string.on_fail_prefix)} ${summarize(it)}" })

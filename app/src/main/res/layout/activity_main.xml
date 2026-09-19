@@ -31,6 +31,13 @@
             android:layout_marginTop="8dp"
             android:text="@string/btn_run_sample" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRecordScript"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/btn_record_script" />
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvScripts"
             android:layout_width="match_parent"

@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.tuytam.automacro.data.AppDatabase
 import com.tuytam.automacro.data.SampleScripts
 import com.tuytam.automacro.data.ScriptRepository
+import com.tuytam.automacro.data.ScriptStep
 import com.tuytam.automacro.databinding.ActivityMainBinding
 import com.tuytam.automacro.service.AutoAccessibilityService
 import kotlinx.coroutines.launch
@@ -49,6 +50,16 @@ class MainActivity : AppCompatActivity() {
             runScript("kịch bản mẫu", SampleScripts.sendMessageExample)
         }
 
+        binding.btnRecordScript.setOnClickListener {
+            val service = AutoAccessibilityService.instance
+            if (service == null) {
+                Toast.makeText(this, getString(R.string.toast_service_not_enabled), Toast.LENGTH_SHORT).show()
+            } else {
+                service.startRecording()
+                Toast.makeText(this, getString(R.string.toast_recording_started), Toast.LENGTH_LONG).show()
+            }
+        }
+
         binding.fabAddScript.setOnClickListener {
             startActivity(Intent(this, ScriptEditorActivity::class.java))
         }
@@ -59,7 +70,7 @@ class MainActivity : AppCompatActivity() {
         updateServiceStatus()
     }
 
-    private fun runScript(name: String, steps: List<com.tuytam.automacro.data.ScriptStep>) {
+    private fun runScript(name: String, steps: List<ScriptStep>) {
         val service = AutoAccessibilityService.instance
         if (service == null) {
             Toast.makeText(this, getString(R.string.toast_service_not_enabled), Toast.LENGTH_SHORT).show()
