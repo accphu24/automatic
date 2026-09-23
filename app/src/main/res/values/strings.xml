@@ -12,6 +12,11 @@
     <string name="note_owo_sync">Khi bật, cứ 15 giây app sẽ hỏi owo-tracker có lệnh mới không. Lệnh có tên hành động trùng với tên 1 kịch bản đã lưu (VD: kịch bản tên "swap_gem" khớp lệnh swap_gem) sẽ tự chạy.</string>
     <string name="toast_owo_settings_saved">Đã lưu cài đặt kết nối</string>
     <string name="toast_owo_settings_saved_no_service">Đã lưu, nhưng cần bật quyền Accessibility thì mới bắt đầu kiểm tra lệnh được</string>
+    <string name="btn_setup_discord_targets">📍 Cài vị trí ô nhập &amp; nút Gửi Discord</string>
+    <string name="toast_setup_targets_hint">Giờ chuyển sang Discord ngay (đừng tắt lời nhắc), chạm đúng ô nhập tin nhắn, rồi chạm nút Gửi</string>
+    <string name="toast_targets_saved">Đã lưu vị trí Discord</string>
+    <string name="status_discord_targets_set">Vị trí Discord: đã cài đặt ✅</string>
+    <string name="status_discord_targets_not_set">Vị trí Discord: chưa cài đặt ⚠️</string>
     <string name="toast_recording_started">Đang ghi... Mở app cần tự động hóa và thao tác bình thường. Bấm vào chấm đỏ nổi trên màn hình khi xong để dừng.</string>
     <string name="toast_recording_empty">Không ghi được bước nào — thử mở app và bấm nút chậm hơn 1 chút, hoặc app đó có thể không hỗ trợ Accessibility đầy đủ.</string>
     <string name="toast_service_not_enabled">Chưa bật quyền Accessibility</string>
@@ -52,6 +57,8 @@
     <string name="picker_prompt_start">Chạm vào điểm BẮT ĐẦU của cú vuốt</string>
     <string name="picker_prompt_end">Chạm vào điểm KẾT THÚC của cú vuốt</string>
     <string name="picker_prompt_tap">Chạm vào vị trí muốn bấm</string>
+    <string name="picker_prompt_message_box">Chạm vào Ô NHẬP TIN NHẮN trên Discord</string>
+    <string name="picker_prompt_send_button">Chạm vào NÚT GỬI trên Discord</string>
 
     <string name="label_package_name">Tên gói app (package name)</string>
     <string name="label_wait_seconds">Số giây cần đợi</string>

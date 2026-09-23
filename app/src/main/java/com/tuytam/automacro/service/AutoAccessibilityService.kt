@@ -17,7 +17,6 @@ import android.widget.ScrollView
 import android.widget.TextView
 import com.tuytam.automacro.R
 import com.tuytam.automacro.ScriptEditorActivity
-import com.tuytam.automacro.data.AppDatabase
 import com.tuytam.automacro.data.OwoTrackerApi
 import com.tuytam.automacro.data.OwoTrackerPrefs
 import com.tuytam.automacro.data.ScriptJson
@@ -191,35 +190,52 @@ class AutoAccessibilityService : AccessibilityService() {
         val commands = OwoTrackerApi.fetchPending(apiUrl, token)
         if (commands.isEmpty()) return
 
-        val dao = AppDatabase.getInstance(this).scriptDao()
+        val targets = OwoTrackerPrefs.load(this)
+        if (!targets.hasDiscordTargets) {
+            Log.w(TAG, "Chua cai vi tri o nhap/nut Gui Discord - bo qua ${commands.size} lenh dang cho")
+            return
+        }
+
         for (cmd in commands) {
-            val scriptEntity = dao.getByName(cmd.action)
-            if (scriptEntity == null) {
-                Log.w(TAG, "Lenh '${cmd.action}' den tu owo-tracker nhung chua co kich ban cung ten - bo qua")
+            val commandText = cmd.params["command_text"]
+            if (commandText.isNullOrBlank()) {
+                Log.w(TAG, "Lenh '${cmd.action}' khong co command_text - bo qua")
                 OwoTrackerApi.ack(apiUrl, token, cmd.id, "failed")
                 continue
             }
-            val steps = ScriptJson.jsonToSteps(scriptEntity.actionsJson).map { step ->
-                step.copy(params = step.params.mapValues { (_, v) -> substitutePlaceholders(v, cmd.params) })
-            }
+
+            // Luon dung dung 3 buoc: bam o nhap -> go lenh -> bam Gui.
+            // Khong can tao/dat ten kich ban rieng cho tung loai lenh nua.
+            val steps = listOf(
+                ScriptStep(
+                    id = "t1", type = StepType.TAP,
+                    params = mapOf("fallbackX" to targets.messageBoxX.toString(), "fallbackY" to targets.messageBoxY.toString())
+                ),
+                ScriptStep(id = "t2", type = StepType.TYPE_TEXT, params = mapOf("text" to commandText)),
+                ScriptStep(
+                    id = "t3", type = StepType.TAP,
+                    params = mapOf("fallbackX" to targets.sendButtonX.toString(), "fallbackY" to targets.sendButtonY.toString())
+                )
+            )
+
             val status = try {
                 val finished = ScriptEngine(this).run(steps)
                 if (finished) "done" else "failed"
             } catch (e: Exception) {
-                Log.e(TAG, "Loi khi chay kich ban '${cmd.action}': ${e.message}")
+                Log.e(TAG, "Loi khi chay lenh '${cmd.action}': ${e.message}")
                 "failed"
             }
             OwoTrackerApi.ack(apiUrl, token, cmd.id, status)
         }
     }
 
-    /** Thay {{ten}} trong text bang gia tri that tu params cua lenh (VD: {{command_text}} -> "owo use 051") */
-    private fun substitutePlaceholders(text: String, params: Map<String, String>): String {
-        var result = text
-        for ((key, value) in params) {
-            result = result.replace("{{$key}}", value)
-        }
-        return result
+    /** Wizard cai vi tri 1 lan: cham o nhap tin nhan, roi cham nut Gui, luu lai de dung cho moi lenh sau nay. */
+    fun setupDiscordTargets(onComplete: (msgX: Float, msgY: Float, sendX: Float, sendY: Float) -> Unit) {
+        startTwoPointPicking(
+            getString(R.string.picker_prompt_message_box),
+            getString(R.string.picker_prompt_send_button),
+            onComplete
+        )
     }
 
     // ----------------- GHI KICH BAN (RECORD) -----------------
@@ -342,7 +358,7 @@ class AutoAccessibilityService : AccessibilityService() {
         }
 
         view.findViewById<View>(R.id.btnAddSwipePoint).setOnClickListener {
-            startSwipePointPicking { fromX, fromY, toX, toY ->
+            startTwoPointPicking(getString(R.string.picker_prompt_start), getString(R.string.picker_prompt_end)) { fromX, fromY, toX, toY ->
                 maybeInsertWaitStep(System.currentTimeMillis())
                 addRecordedStep(
                     StepType.SWIPE,
@@ -405,14 +421,19 @@ class AutoAccessibilityService : AccessibilityService() {
         pickerView = view
     }
 
-    /** Danh dau 2 diem lien tiep (dau roi cuoi), ca 2 cham cung hien tren 1 man hinh - dung cho nut ➕ (Vuot) */
-    private fun startSwipePointPicking(onComplete: (fromX: Float, fromY: Float, toX: Float, toY: Float) -> Unit) {
+    /** Danh dau 2 diem lien tiep (dau roi cuoi), ca 2 cham cung hien tren 1 man hinh - dung chung cho
+     * nut ➕ (Vuot) va wizard cai vi tri Discord (setupDiscordTargets). */
+    private fun startTwoPointPicking(
+        prompt1: String,
+        prompt2: String,
+        onComplete: (x1: Float, y1: Float, x2: Float, y2: Float) -> Unit
+    ) {
         val wm = getSystemService(WINDOW_SERVICE) as WindowManager
         val view = LayoutInflater.from(this).inflate(R.layout.overlay_point_picker, null)
         val promptView = view.findViewById<TextView>(R.id.tvPickerPrompt)
         val markerStart = view.findViewById<View>(R.id.pickerMarkerStart)
         val markerEnd = view.findViewById<View>(R.id.pickerMarkerEnd)
-        promptView.text = getString(R.string.picker_prompt_start)
+        promptView.text = prompt1
 
         val params = pickerWindowParams()
         var firstPoint: Pair<Float, Float>? = null
@@ -425,7 +446,7 @@ class AutoAccessibilityService : AccessibilityService() {
                 if (first == null) {
                     firstPoint = x to y
                     placeMarker(markerStart, x, y)
-                    promptView.text = getString(R.string.picker_prompt_end)
+                    promptView.text = prompt2
                 } else {
                     placeMarker(markerEnd, x, y)
                     view.postDelayed({

@@ -7,6 +7,7 @@ import android.text.TextUtils
 import android.view.LayoutInflater
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -93,10 +94,29 @@ class MainActivity : AppCompatActivity() {
         val etUrl = view.findViewById<EditText>(R.id.etOwoApiUrl)
         val etToken = view.findViewById<EditText>(R.id.etOwoApiToken)
         val cbEnabled = view.findViewById<CheckBox>(R.id.cbOwoSyncEnabled)
+        val tvTargetsStatus = view.findViewById<TextView>(R.id.tvDiscordTargetsStatus)
+        val btnSetupTargets = view.findViewById<android.view.View>(R.id.btnSetupDiscordTargets)
 
         etUrl.setText(current.apiUrl)
         etToken.setText(current.token)
         cbEnabled.isChecked = current.enabled
+        updateTargetsStatusText(tvTargetsStatus, current.hasDiscordTargets)
+
+        btnSetupTargets.setOnClickListener {
+            val service = AutoAccessibilityService.instance
+            if (service == null) {
+                Toast.makeText(this, getString(R.string.toast_service_not_enabled), Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            Toast.makeText(this, getString(R.string.toast_setup_targets_hint), Toast.LENGTH_LONG).show()
+            service.setupDiscordTargets { msgX, msgY, sendX, sendY ->
+                OwoTrackerPrefs.saveDiscordTargets(this, msgX, msgY, sendX, sendY)
+                runOnUiThread {
+                    updateTargetsStatusText(tvTargetsStatus, true)
+                    Toast.makeText(this, getString(R.string.toast_targets_saved), Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
 
         AlertDialog.Builder(this)
             .setTitle(R.string.title_owo_tracker_settings)
@@ -106,7 +126,7 @@ class MainActivity : AppCompatActivity() {
                 val token = etToken.text.toString().trim()
                 val enabled = cbEnabled.isChecked
 
-                OwoTrackerPrefs.save(this, enabled, url, token)
+                OwoTrackerPrefs.saveConnection(this, enabled, url, token)
 
                 val service = AutoAccessibilityService.instance
                 if (service == null) {
@@ -118,6 +138,12 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton(R.string.btn_cancel, null)
             .show()
+    }
+
+    private fun updateTargetsStatusText(view: TextView, hasTargets: Boolean) {
+        view.text = getString(
+            if (hasTargets) R.string.status_discord_targets_set else R.string.status_discord_targets_not_set
+        )
     }
 
     private fun updateServiceStatus() {

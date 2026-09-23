@@ -31,10 +31,13 @@ dien thoai). Xem muc "Ket noi voi owo-tracker" ben duoi.
   bong bong: 👆 (danh dau 1 diem de Bam) va ➕ (cham 2 diem dau/cuoi de tao buoc Vuot
   chinh xac) - ca 2 co hien cham mau xac nhan vi tri vua cham.
   GIOI HAN: van CHUA tu ghi duoc go chu (phai dung TYPE_TEXT thu cong + 👆 cho nut Gui).
-- Ket noi owo-tracker: man hinh Cai dat (nut ⚙️) luu URL API + token (SharedPreferences).
-  Khi bat, service cu 15 giay goi GET /commands/pending 1 lan, voi moi lenh nhan duoc
-  tim 1 kich ban CUNG TEN voi "action" cua lenh, thay {{placeholder}} trong cac buoc
-  bang gia tri that tu params cua lenh, chay, roi POST /commands/{id}/ack bao done/failed.
+- Ket noi owo-tracker: man hinh Cai dat (nut ⚙️) luu URL API + token (SharedPreferences),
+  va vi tri (toa do) O NHAP TIN NHAN + NUT GUI tren Discord - cai 1 LAN DUY NHAT qua
+  wizard cham 2 diem. Khi bat, service cu 15 giay goi GET /commands/pending 1 lan;
+  MOI lenh nhan duoc (bat ky "action" nao, khong can khop ten kich ban) deu chay dung
+  3 buoc: bam o nhap -> go params.command_text -> bam Gui, roi POST /commands/{id}/ack
+  bao done/failed. Don gian hoa tu ban dau (bo phan tao kich ban rieng + khop ten,
+  vi Ruby thay qua phuc tap) - gio KHONG can Room/kich ban cho phan nay nua.
 
 ## Chua co (con thieu)
 - Sua lai 1 kich ban DA LUU tu Room (hien chi xoa lam lai duoc, chua mo lai de sua).
@@ -42,6 +45,8 @@ dien thoai). Xem muc "Ket noi voi owo-tracker" ben duoi.
 - Ghi tu dong thao tac go chu (phai lam thu cong).
 - Moi chi lam xong case dau tien voi owo-tracker (swap_gem) - hunt/battle tu dong
   CHUA lam (rui ro OwO phat hien cao hon, can ban owo-tracker biet cooldown ngan truoc).
+  Nhung ve mat AutoMacro thi KHONG can lam gi them de ho tro action moi - chi can
+  owo-tracker gui "command_text" dung, AutoMacro tu chay duoc ngay.
 
 ## Ket noi voi owo-tracker (repo rieng)
 - owo-tracker (Python, chay Railway) co API rieng: GET /commands/pending,
@@ -49,11 +54,10 @@ dien thoai). Xem muc "Ket noi voi owo-tracker" ben duoi.
   Token nay KHAC MONGODB_URI - dien thoai khong bao gio cam chuoi ket noi Mongo that.
 - Ca 2 phia phai dat CUNG 1 token: owo-tracker qua bien moi truong AUTOMACRO_API_TOKEN,
   AutoMacro qua man hinh Cai dat trong app (luu SharedPreferences, khong phai Room).
-- Muon 1 "action" tu owo-tracker tu chay duoc, PHAI tao 1 kich ban trong AutoMacro
-  CUNG TEN CHINH XAC voi action do (vi du action "swap_gem" -> kich ban ten "swap_gem").
-  Kich ban do nen dung buoc TAP de bam vao o nhap Discord, roi TYPE_TEXT voi noi dung
-  "{{command_text}}" (se duoc thay bang gia tri that, vi du "owo use 051"), roi TAP
-  (khuyen dung nut 👆 danh dau thu cong) vao nut Gui.
+- AutoMacro chi can biet 2 toa do (o nhap tin nhan + nut Gui Discord), cai 1 lan qua
+  nut "📍 Cai vi tri..." trong man hinh Cai dat. TU DONG dung cho MOI lenh owo-tracker
+  gui toi sau nay (khong can tao/dat ten kich ban rieng cho tung loai lenh nua).
+  Lenh tu server chi can co field "command_text" trong params la chay duoc.
 - Case dau tien da lam: "swap_gem" - owo-tracker tu phat hien gem het do ben, ghi lenh
   kem item_code/gem_tier/command_text da chon san (tier thap nhat con lai).
 
