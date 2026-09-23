@@ -85,6 +85,7 @@ class ScriptEditorActivity : AppCompatActivity() {
             StepType.WAIT to getString(R.string.step_type_wait),
             StepType.TAP to getString(R.string.step_type_tap),
             StepType.SWIPE to getString(R.string.step_type_swipe),
+            StepType.TYPE_TEXT to getString(R.string.step_type_type_text),
             StepType.CHECK_TEXT to getString(R.string.step_type_check_text),
             StepType.CHECK_EXISTS to getString(R.string.step_type_check_exists),
             StepType.NOTIFY to getString(R.string.step_type_notify)
@@ -106,6 +107,7 @@ class ScriptEditorActivity : AppCompatActivity() {
             StepType.WAIT -> R.layout.dialog_step_wait
             StepType.TAP -> R.layout.dialog_step_tap
             StepType.SWIPE -> R.layout.dialog_step_swipe
+            StepType.TYPE_TEXT -> R.layout.dialog_step_type_text
             StepType.CHECK_TEXT -> R.layout.dialog_step_check_text
             StepType.CHECK_EXISTS -> R.layout.dialog_step_check_exists
             StepType.NOTIFY -> R.layout.dialog_step_notify
@@ -141,6 +143,8 @@ class ScriptEditorActivity : AppCompatActivity() {
                     typeView.findViewById<EditText>(R.id.etToX).setText(step.params["toX"])
                     typeView.findViewById<EditText>(R.id.etToY).setText(step.params["toY"])
                 }
+                StepType.TYPE_TEXT ->
+                    typeView.findViewById<EditText>(R.id.etTypeText).setText(step.params["text"])
                 StepType.CHECK_TEXT -> {
                     typeView.findViewById<EditText>(R.id.etValue).setText(step.params["value"])
                     typeView.findViewById<EditText>(R.id.etExpected).setText(step.params["expected"])
@@ -200,6 +204,9 @@ class ScriptEditorActivity : AppCompatActivity() {
                         params["fromY"] = typeView.findViewById<EditText>(R.id.etFromY).text.toString().trim()
                         params["toX"] = typeView.findViewById<EditText>(R.id.etToX).text.toString().trim()
                         params["toY"] = typeView.findViewById<EditText>(R.id.etToY).text.toString().trim()
+                    }
+                    StepType.TYPE_TEXT -> {
+                        params["text"] = typeView.findViewById<EditText>(R.id.etTypeText).text.toString()
                     }
                     StepType.CHECK_TEXT -> {
                         val bySpinner = typeView.findViewById<Spinner>(R.id.spinnerBy)

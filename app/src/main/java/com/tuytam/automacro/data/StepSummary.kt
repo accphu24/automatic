@@ -11,6 +11,7 @@ fun summarizeStep(step: ScriptStep): String {
         StepType.WAIT -> "Đợi ${step.params["seconds"]} giây"
         StepType.TAP -> "Bấm \"${step.params["value"]}\""
         StepType.SWIPE -> "Vuốt (${step.params["fromX"]},${step.params["fromY"]}) → (${step.params["toX"]},${step.params["toY"]})"
+        StepType.TYPE_TEXT -> "Gõ \"${step.params["text"]}\""
         StepType.CHECK_TEXT -> "Kiểm tra \"${step.params["value"]}\" = \"${step.params["expected"]}\""
         StepType.CHECK_EXISTS -> "Kiểm tra có \"${step.params["value"]}\" trên màn hình"
         StepType.NOTIFY -> "Báo động: ${step.params["message"]}"

@@ -13,6 +13,9 @@ interface ScriptDao {
     @Query("SELECT * FROM scripts ORDER BY id DESC")
     fun getAll(): Flow<List<ScriptEntity>>
 
+    @Query("SELECT * FROM scripts WHERE name = :name LIMIT 1")
+    suspend fun getByName(name: String): ScriptEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(script: ScriptEntity): Long
 

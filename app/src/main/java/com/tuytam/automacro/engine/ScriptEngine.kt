@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Rect
 import android.media.RingtoneManager
+import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
@@ -24,16 +25,23 @@ private const val TAG = "ScriptEngine"
  */
 class ScriptEngine(private val service: AutoAccessibilityService) {
 
-    suspend fun run(steps: List<ScriptStep>) {
-        if (steps.isEmpty()) return
+    /**
+     * Chay kich ban. Tra ve true neu chay het cac buoc (khong bi dung giua
+     * chung vi 1 buoc that bai ma khong co onFail) - dung de bao ket qua
+     * ve owo-tracker (done/failed).
+     */
+    suspend fun run(steps: List<ScriptStep>): Boolean {
+        if (steps.isEmpty()) return true
         val indexById = steps.mapIndexed { index, step -> step.id to index }.toMap()
 
         var index = 0
         var guard = 0
+        var stoppedEarly = false
         while (index in steps.indices) {
             guard++
             if (guard > 500) {
                 Log.w(TAG, "Dung: kich ban chay qua 500 buoc, co the bi lap vo han")
+                stoppedEarly = true
                 break
             }
 
@@ -49,12 +57,17 @@ class ScriptEngine(private val service: AutoAccessibilityService) {
             index = when {
                 jumpId != null -> indexById[jumpId] ?: run {
                     Log.w(TAG, "Khong tim thay buoc id=$jumpId de nhay toi, dung kich ban")
+                    stoppedEarly = true
                     steps.size
                 }
                 success -> index + 1
-                else -> steps.size // that bai, khong co onFail duoc khai bao -> dung han
+                else -> {
+                    stoppedEarly = true
+                    steps.size // that bai, khong co onFail duoc khai bao -> dung han
+                }
             }
         }
+        return !stoppedEarly
     }
 
     private suspend fun executeStep(step: ScriptStep): Boolean {
@@ -63,10 +76,26 @@ class ScriptEngine(private val service: AutoAccessibilityService) {
             StepType.WAIT -> wait(step.params["seconds"])
             StepType.TAP -> tap(step.params)
             StepType.SWIPE -> swipe(step.params)
+            StepType.TYPE_TEXT -> typeText(step.params)
             StepType.CHECK_TEXT -> checkText(step.params)
             StepType.CHECK_EXISTS -> checkExists(step.params)
             StepType.NOTIFY -> notify(step.params)
         }
+    }
+
+    /**
+     * Go chu vao O DANG DUOC FOCUS tren man hinh - thuong can 1 buoc TAP
+     * ngay truoc de bam vao o nhap truoc, roi buoc nay moi go duoc vao dung cho.
+     */
+    private fun typeText(params: Map<String, String>): Boolean {
+        val text = params["text"] ?: return false
+        val focused = service.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) ?: return false
+        val arguments = Bundle().apply {
+            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+        }
+        val success = focused.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
+        focused.recycle()
+        return success
     }
 
     private fun swipe(params: Map<String, String>): Boolean {

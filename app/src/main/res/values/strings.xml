@@ -4,6 +4,14 @@
     <string name="btn_open_accessibility_settings">Bật quyền Accessibility</string>
     <string name="btn_run_sample">Chạy kịch bản mẫu (test)</string>
     <string name="btn_record_script">🔴 Ghi kịch bản mới (record)</string>
+    <string name="btn_owo_tracker_settings">⚙️ Kết nối owo-tracker</string>
+    <string name="title_owo_tracker_settings">Kết nối owo-tracker</string>
+    <string name="label_owo_api_url">Địa chỉ API (URL public trên Railway)</string>
+    <string name="label_owo_api_token">Token (giống AUTOMACRO_API_TOKEN đã đặt)</string>
+    <string name="label_owo_sync_enabled">Bật tự động kiểm tra lệnh mới (mỗi 15 giây)</string>
+    <string name="note_owo_sync">Khi bật, cứ 15 giây app sẽ hỏi owo-tracker có lệnh mới không. Lệnh có tên hành động trùng với tên 1 kịch bản đã lưu (VD: kịch bản tên "swap_gem" khớp lệnh swap_gem) sẽ tự chạy.</string>
+    <string name="toast_owo_settings_saved">Đã lưu cài đặt kết nối</string>
+    <string name="toast_owo_settings_saved_no_service">Đã lưu, nhưng cần bật quyền Accessibility thì mới bắt đầu kiểm tra lệnh được</string>
     <string name="toast_recording_started">Đang ghi... Mở app cần tự động hóa và thao tác bình thường. Bấm vào chấm đỏ nổi trên màn hình khi xong để dừng.</string>
     <string name="toast_recording_empty">Không ghi được bước nào — thử mở app và bấm nút chậm hơn 1 chút, hoặc app đó có thể không hỗ trợ Accessibility đầy đủ.</string>
     <string name="toast_service_not_enabled">Chưa bật quyền Accessibility</string>
@@ -28,12 +36,16 @@
     <string name="step_type_wait">Đợi</string>
     <string name="step_type_tap">Bấm vào 1 nút/ô</string>
     <string name="step_type_swipe">Vuốt</string>
+    <string name="step_type_type_text">Gõ chữ</string>
     <string name="step_type_check_text">Kiểm tra nội dung 1 ô</string>
     <string name="step_type_check_exists">Kiểm tra có xuất hiện trên màn hình</string>
     <string name="step_type_notify">Báo động (rung/chuông)</string>
 
     <string name="label_swipe_from">Vuốt từ tọa độ</string>
     <string name="label_swipe_to">Đến tọa độ</string>
+    <string name="label_type_text">Nội dung sẽ gõ</string>
+    <string name="hint_type_text">VD: owo hunt, hoặc {{command_text}}</string>
+    <string name="note_type_text">Bước này gõ vào ô ĐANG ĐƯỢC CHỌN trên màn hình — thêm 1 bước "Bấm" vào ô nhập ngay TRƯỚC bước này. Dùng {{ten}} nếu muốn thay bằng giá trị thật từ lệnh owo-tracker gửi tới (VD: {{command_text}}).</string>
 
     <string name="overlay_header_label">Đang ghi — bấm để dừng</string>
     <string name="overlay_no_action_yet">Chưa có hành động nào…</string>

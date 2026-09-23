@@ -10,6 +10,7 @@ enum class StepType {
     WAIT,         // dung vai giay
     TAP,          // bam vao 1 phan tu (theo chu/id) hoac toa do du phong
     SWIPE,        // vuot tu 1 toa do den 1 toa do khac
+    TYPE_TEXT,    // go chu vao o dang duoc focus (thuong sau 1 buoc TAP truoc do)
     CHECK_TEXT,   // doc chu trong 1 o, so voi gia tri mong doi
     CHECK_EXISTS, // tim 1 phan tu (chu/id) co xuat hien tren man hinh khong
     NOTIFY        // bao dong: rung / chuong / am thanh
@@ -24,11 +25,17 @@ enum class StepType {
  *   - de trong (null) o onFail    -> neu buoc that bai thi kich ban DUNG LAI
  *     tai do (khong tu lam tiep buoc sau, de tranh lam sai them)
  *
+ * "text" trong buoc TYPE_TEXT co the chua placeholder dang {{ten}} - khi
+ * kich ban duoc chay boi 1 lenh tu owo-tracker, cac placeholder nay se
+ * duoc thay bang gia tri that tu lenh do truoc khi chay (vi du
+ * {{command_text}} -> "owo use 051").
+ *
  * Cac tham so (params) dung chung theo tung loai buoc:
  *   OPEN_APP:     packageName
  *   WAIT:         seconds
  *   TAP:          by ("text" hoac "viewId"), value, fallbackX, fallbackY (tuy chon)
  *   SWIPE:        fromX, fromY, toX, toY, durationMs (tuy chon)
+ *   TYPE_TEXT:    text (co the chua {{placeholder}})
  *   CHECK_TEXT:   by, value (o can doc), expected (gia tri mong doi), timeoutSeconds (tuy chon)
  *   CHECK_EXISTS: by, value, timeoutSeconds (tuy chon, mac dinh 5 giay)
  *   NOTIFY:       vibrate ("true"/"false"), sound ("true"/"false"), message

@@ -17,6 +17,9 @@ import android.widget.ScrollView
 import android.widget.TextView
 import com.tuytam.automacro.R
 import com.tuytam.automacro.ScriptEditorActivity
+import com.tuytam.automacro.data.AppDatabase
+import com.tuytam.automacro.data.OwoTrackerApi
+import com.tuytam.automacro.data.OwoTrackerPrefs
 import com.tuytam.automacro.data.ScriptJson
 import com.tuytam.automacro.data.ScriptStep
 import com.tuytam.automacro.data.StepType
@@ -25,6 +28,8 @@ import com.tuytam.automacro.engine.ScriptEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
@@ -80,6 +85,9 @@ class AutoAccessibilityService : AccessibilityService() {
     // --- Man hinh chon diem (dung khi bam nut 👆/➕) ---
     private var pickerView: View? = null
 
+    // --- Dong bo voi owo-tracker: cu vai giay kiem tra lenh moi 1 lan ---
+    private var syncJob: Job? = null
+
     companion object {
         private const val TAG = "AutoAccessibilityService"
 
@@ -92,6 +100,8 @@ class AutoAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         instance = this
         Log.d(TAG, "Accessibility Service da ket noi")
+        val saved = OwoTrackerPrefs.load(this)
+        applySyncSettings(saved.enabled, saved.apiUrl, saved.token)
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -152,6 +162,64 @@ class AutoAccessibilityService : AccessibilityService() {
         serviceScope.launch {
             ScriptEngine(this@AutoAccessibilityService).run(steps)
         }
+    }
+
+    // ----------------- DONG BO VOI OWO-TRACKER -----------------
+
+    /** Goi khi Ruby luu cai dat ket noi trong man hinh Cai dat - bat/tat vong lap kiem tra lenh. */
+    fun applySyncSettings(enabled: Boolean, apiUrl: String, token: String) {
+        syncJob?.cancel()
+        syncJob = null
+        if (!enabled || apiUrl.isBlank() || token.isBlank()) {
+            Log.d(TAG, "Dong bo owo-tracker: TAT")
+            return
+        }
+        Log.d(TAG, "Dong bo owo-tracker: BAT, cu 15 giay kiem tra 1 lan")
+        syncJob = serviceScope.launch {
+            while (isActive) {
+                try {
+                    pollOwoTrackerOnce(apiUrl, token)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Loi khi dong bo owo-tracker: ${e.message}")
+                }
+                delay(15_000)
+            }
+        }
+    }
+
+    private suspend fun pollOwoTrackerOnce(apiUrl: String, token: String) {
+        val commands = OwoTrackerApi.fetchPending(apiUrl, token)
+        if (commands.isEmpty()) return
+
+        val dao = AppDatabase.getInstance(this).scriptDao()
+        for (cmd in commands) {
+            val scriptEntity = dao.getByName(cmd.action)
+            if (scriptEntity == null) {
+                Log.w(TAG, "Lenh '${cmd.action}' den tu owo-tracker nhung chua co kich ban cung ten - bo qua")
+                OwoTrackerApi.ack(apiUrl, token, cmd.id, "failed")
+                continue
+            }
+            val steps = ScriptJson.jsonToSteps(scriptEntity.actionsJson).map { step ->
+                step.copy(params = step.params.mapValues { (_, v) -> substitutePlaceholders(v, cmd.params) })
+            }
+            val status = try {
+                val finished = ScriptEngine(this).run(steps)
+                if (finished) "done" else "failed"
+            } catch (e: Exception) {
+                Log.e(TAG, "Loi khi chay kich ban '${cmd.action}': ${e.message}")
+                "failed"
+            }
+            OwoTrackerApi.ack(apiUrl, token, cmd.id, status)
+        }
+    }
+
+    /** Thay {{ten}} trong text bang gia tri that tu params cua lenh (VD: {{command_text}} -> "owo use 051") */
+    private fun substitutePlaceholders(text: String, params: Map<String, String>): String {
+        var result = text
+        for ((key, value) in params) {
+            result = result.replace("{{$key}}", value)
+        }
+        return result
     }
 
     // ----------------- GHI KICH BAN (RECORD) -----------------
