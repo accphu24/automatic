@@ -46,7 +46,8 @@ dien thoai). Xem muc "Ket noi voi owo-tracker" ben duoi.
   giay chi cap nhat dong ho + chu "X phut truoc". Cham the Zoo/Vu khi/Kho do de mo rong.
   Muc nao bot chua tung thay thi hien "Chua co du lieu". HubFormat.kt la ham thuan (khong
   dung Android) chuyen JSON thanh chu; HubModels.kt la cac lop Gson khop JSON cua /hub.
-  Co them the Daily (dem nguoc gio nhan + streak), Cowoncy, va dem nguoc quest ke tiep.
+  Co them the Daily (dem nguoc gio nhan + streak), Cowoncy, va Quest (dem nguoc quest ke tiep
+  + tung quest: ten, tien do, mo ta, thuong).
   KHONG co profile: `owo profile` cua OwO la 1 tam ANH (khong co chu) nen bot khong doc duoc.
 
 ## Chua co (con thieu)

@@ -155,7 +155,13 @@ object HubFormat {
 
     fun quest(q: HubQuest?, elapsedSec: Long): String {
         if (q == null) return noData(null)
-        val sb = StringBuilder(if (q.allDone == true) "✅ Đã xong hết quest" else "📋 Còn quest chưa xong")
+        val items = q.quests.orEmpty()
+        val header = when {
+            q.allDone == true -> "✅ Đã xong hết quest"
+            items.isNotEmpty() -> "📋 Còn ${items.count { it.done != true }}/${items.size} quest chưa xong"
+            else -> "📋 Còn quest chưa xong"
+        }
+        val sb = StringBuilder(header)
         if (q.seals != null) sb.append(" · Seals: ${num(q.seals)}")
         val nextSec = q.nextQuestSeconds
         if (nextSec != null) {
@@ -167,6 +173,20 @@ object HubFormat {
             }
         } else if (!q.nextQuest.isNullOrBlank()) {
             sb.append("\nKế tiếp: ${q.nextQuest}")
+        }
+        for (qi in items) {
+            val mark = if (qi.done == true) "✅" else "•"
+            val rarity = if (qi.rarity.isNullOrBlank()) "" else " (${qi.rarity})"
+            sb.append("\n\n$mark ${qi.index ?: "?"}. ${qi.title ?: "?"}$rarity")
+            if (qi.current != null && qi.max != null && qi.max > 0) {
+                val pct = (qi.current * 100 / qi.max).toInt().coerceIn(0, 100)
+                sb.append("\n   ${bar(pct)} ${num(qi.current)}/${num(qi.max)} ($pct%)")
+            }
+            if (!qi.description.isNullOrBlank()) sb.append("\n   ${qi.description}")
+            val rewards = qi.rewards.orEmpty()
+            if (rewards.isNotEmpty()) {
+                sb.append("\n   Thưởng: ").append(rewards.joinToString(" · ") { r -> "${r.item ?: "?"} +${num(r.amount)}" })
+            }
         }
         return sb.toString()
     }

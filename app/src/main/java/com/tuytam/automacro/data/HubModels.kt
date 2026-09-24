@@ -78,7 +78,24 @@ data class HubQuest(
     @SerializedName("all_done") val allDone: Boolean? = null,
     @SerializedName("next_quest") val nextQuest: String? = null,
     @SerializedName("next_quest_seconds") val nextQuestSeconds: Long? = null,
+    val quests: List<HubQuestItem>? = null,
     @SerializedName("age_seconds") val ageSeconds: Long? = null
+)
+
+data class HubQuestItem(
+    val index: Int? = null,
+    val title: String? = null,
+    val rarity: String? = null,
+    val description: String? = null,
+    val rewards: List<HubReward>? = null,
+    val current: Long? = null,
+    val max: Long? = null,
+    val done: Boolean? = null
+)
+
+data class HubReward(
+    val item: String? = null,
+    val amount: Long? = null
 )
 
 // ---- Doi hinh ----
