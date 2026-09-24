@@ -43,7 +43,12 @@ dien thoai). Xem muc "Ket noi voi owo-tracker" ben duoi.
   nhat owo-tracker da doc duoc tu tin nhan OwO (HuntBot co dong ho dem nguoc, gem dang
   dung + gem du phong, quest, doi hinh, tran dau, pet/zoo, vu khi, kho do). Goi
   GET /hub (cung token voi /commands/pending), tu lam moi moi 30 giay khi dang mo, moi
-  giay chi cap nhat dong ho + chu "X phut truoc". Cham the Zoo/Vu khi/Kho do de mo rong.
+  giay chi cap nhat dong ho + chu "X phut truoc".
+  GIAO DIEN: 6 o tom tat o tren (Daily, HuntBot, Cowoncy, Quest, Gem, Pet) - moi o 1 so to + 1 mau
+  trang thai (xanh la=xong/san sang, xanh duong=dem nguoc, cam=de y, do=can lam ngay, xam=chua co
+  du lieu; logic o data/HubSummary.kt). Ben duoi la 7 the chi tiet moi the 1 mau rieng, luon co 1 dong
+  tom tat, cham de mo/dong (Gem + Quest mo san). Gem/Quest dung ProgressBar that. Mau o res/values
+  (+ values-night). Layout: activity_hub, item_hub_tile, item_hub_card.
   Muc nao bot chua tung thay thi hien "Chua co du lieu". HubFormat.kt la ham thuan (khong
   dung Android) chuyen JSON thanh chu; HubModels.kt la cac lop Gson khop JSON cua /hub;
   HubParser.kt doc TUNG MUC rieng (1 muc hong chi bao loi o muc do, khong lam trang ca man hinh).

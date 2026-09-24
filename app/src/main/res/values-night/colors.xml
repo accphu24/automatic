@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Ban sang hon cho nen toi de van doc ro -->
+    <color name="hub_ok">#66BB6A</color>
+    <color name="hub_info">#64B5F6</color>
+    <color name="hub_warn">#FFA726</color>
+    <color name="hub_bad">#EF5350</color>
+    <color name="hub_idle">#9E9E9E</color>
+</resources>

@@ -1,0 +1,164 @@
+package com.tuytam.automacro.data
+
+/**
+ * Tom tat de nhin la hieu: moi o/the co 1 gia tri to + 1 mau trang thai.
+ * Ham thuan (khong dung Android) nen kiem tra duoc rieng.
+ *
+ *  OK   xanh la  = xong / san sang / on
+ *  INFO xanh duong = dang dem nguoc, binh thuong
+ *  WARN cam      = nen de y (vd HuntBot dang nghi, gem thap)
+ *  BAD  do       = can lam ngay (vd gem sap het) hoac loi
+ *  IDLE xam      = chua co du lieu
+ */
+enum class Tone { OK, INFO, WARN, BAD, IDLE }
+
+data class TileState(val value: String, val sub: String, val tone: Tone)
+
+data class LineState(val text: String, val tone: Tone)
+
+object HubSummary {
+
+    private const val GEM_BAD_PERCENT = 15
+    private const val GEM_WARN_PERCENT = 40
+
+    fun gemTone(percent: Int?): Tone = when {
+        percent == null -> Tone.IDLE
+        percent <= GEM_BAD_PERCENT -> Tone.BAD
+        percent <= GEM_WARN_PERCENT -> Tone.WARN
+        else -> Tone.OK
+    }
+
+    // ---------- 6 o tom tat o dau man hinh ----------
+
+    fun dailyTile(d: HubDaily?, elapsedSec: Long): TileState {
+        if (d == null) return TileState("—", "Gõ owo daily 1 lần", Tone.IDLE)
+        val left = d.secondsLeft ?: return TileState("?", "Chưa rõ giờ nhận", Tone.IDLE)
+        val remain = left - elapsedSec
+        val extras = mutableListOf<String>()
+        if (d.streak != null) extras.add("🔥 ${d.streak}")
+        if (d.lastReward != null) extras.add("+${HubFormat.num(d.lastReward)}")
+        return if (remain > 0) {
+            TileState(HubFormat.shortDuration(remain), extras.joinToString(" · ").ifEmpty { "Chờ tới giờ nhận" }, Tone.INFO)
+        } else {
+            TileState("Sẵn sàng!", "Gõ owo daily để nhận", Tone.OK)
+        }
+    }
+
+    fun huntbotTile(h: HubHuntbot?, elapsedSec: Long): TileState {
+        if (h == null) return TileState("—", "Gõ lệnh HuntBot 1 lần", Tone.IDLE)
+        val extras = mutableListOf<String>()
+        if (h.progressPct != null) extras.add("${HubFormat.trimNum(h.progressPct)}%")
+        if (h.animalsCaptured != null) extras.add("${HubFormat.num(h.animalsCaptured)} pet")
+        if (h.essence != null) extras.add("${HubFormat.num(h.essence)} essence")
+        val info = extras.joinToString(" · ")
+        if (h.hunting != true) {
+            return TileState("Đang nghỉ", info.ifEmpty { "Chưa gửi đi săn" }, Tone.WARN)
+        }
+        val left = h.secondsLeft
+        return when {
+            left == null -> TileState("Đang săn", h.timeRemainingText ?: "Chưa rõ giờ xong", Tone.INFO)
+            left - elapsedSec > 0 -> TileState(HubFormat.shortDuration(left - elapsedSec), info.ifEmpty { "Đang săn" }, Tone.INFO)
+            else -> TileState("Xong!", "Có thể thu về", Tone.OK)
+        }
+    }
+
+    fun cowoncyTile(c: HubCowoncy?, ageSec: Long?): TileState {
+        if (c == null || c.amount == null) return TileState("—", "Gõ owo money 1 lần", Tone.IDLE)
+        val age = HubFormat.age(ageSec)
+        return TileState(HubFormat.num(c.amount), if (age.isEmpty()) "cowoncy" else "cập nhật $age", Tone.INFO)
+    }
+
+    fun questTile(q: HubQuest?, elapsedSec: Long): TileState {
+        if (q == null) return TileState("—", "Gõ owo quest 1 lần", Tone.IDLE)
+        val items = q.quests.orEmpty()
+        val nextSec = q.nextQuestSeconds
+        val next = when {
+            nextSec == null -> null
+            nextSec - elapsedSec > 0 -> "Mới sau ${HubFormat.shortDuration(nextSec - elapsedSec)}"
+            else -> "Đã có quest mới"
+        }
+        val seals = if (q.seals != null) "Seals ${HubFormat.num(q.seals)}" else null
+        val sub = listOfNotNull(next, seals).joinToString(" · ").ifEmpty { "Quest" }
+        return when {
+            q.allDone == true -> TileState("Xong hết", sub, Tone.OK)
+            items.isNotEmpty() -> {
+                val done = items.count { it.done == true }
+                TileState("$done/${items.size} xong", sub, if (done == items.size) Tone.OK else Tone.INFO)
+            }
+            else -> TileState("Còn quest", sub, Tone.INFO)
+        }
+    }
+
+    fun gemsTile(g: HubGems?): TileState {
+        if (g == null) return TileState("—", "Gõ owo hunt 1 lần", Tone.IDLE)
+        val equipped = g.equipped.orEmpty()
+        val lowest = equipped.minByOrNull { it.percent ?: 100 }
+            ?: return TileState("—", "Chưa thấy gem đang dùng", Tone.IDLE)
+        val more = if (equipped.size > 1) " · ${equipped.size} gem" else ""
+        return TileState("${lowest.percent ?: 0}%", "Slot ${lowest.slot ?: "?"} ${lowest.tier ?: ""}$more".trim(), gemTone(lowest.percent))
+    }
+
+    fun zooTile(z: HubZoo?): TileState {
+        if (z == null) return TileState("—", "Gõ owo zoo 1 lần", Tone.IDLE)
+        return TileState(HubFormat.num(z.totalPets), "pet · ${HubFormat.num(z.zooPoints)} điểm", Tone.INFO)
+    }
+
+    // ---------- Dong tom tat cua tung the chi tiet ----------
+
+    private fun noData() = LineState("Chưa có dữ liệu — cần gõ lệnh tương ứng 1 lần", Tone.IDLE)
+
+    fun gemsLine(g: HubGems?): LineState {
+        if (g == null) return noData()
+        val equipped = g.equipped.orEmpty()
+        val spareTotal = g.spare.orEmpty().sumOf { it.count ?: 0L }
+        val lowest = equipped.minByOrNull { it.percent ?: 100 }
+        val text = if (lowest == null) "Chưa thấy gem đang dùng · kho ${HubFormat.num(spareTotal)} viên"
+        else "${equipped.size} đang dùng, thấp nhất ${lowest.percent ?: 0}% · kho ${HubFormat.num(spareTotal)} viên"
+        return LineState(text, if (lowest == null) Tone.IDLE else gemTone(lowest.percent))
+    }
+
+    fun questLine(q: HubQuest?): LineState {
+        if (q == null) return noData()
+        val items = q.quests.orEmpty()
+        val seals = if (q.seals != null) " · Seals ${HubFormat.num(q.seals)}" else ""
+        return when {
+            q.allDone == true -> LineState("Đã xong hết quest hôm nay$seals", Tone.OK)
+            items.isNotEmpty() -> {
+                val left = items.count { it.done != true }
+                LineState("$left/${items.size} quest chưa xong$seals", if (left == 0) Tone.OK else Tone.INFO)
+            }
+            else -> LineState("Còn quest chưa xong$seals", Tone.INFO)
+        }
+    }
+
+    fun teamLine(t: HubTeam?): LineState {
+        val members = t?.members.orEmpty()
+        if (members.isEmpty()) return noData()
+        val names = members.mapNotNull { it.name }
+        val shown = names.take(3).joinToString(", ") + if (names.size > 3) "…" else ""
+        return LineState("${members.size} pet: $shown", Tone.INFO)
+    }
+
+    fun battlesLine(b: HubBattles?): LineState {
+        if (b == null) return noData()
+        val wins = b.wins ?: 0
+        val losses = b.losses ?: 0
+        val streak = if (b.currentStreak != null) " · streak ${b.currentStreak}" else ""
+        return LineState("$wins thắng · $losses thua$streak", if (wins >= losses) Tone.OK else Tone.WARN)
+    }
+
+    fun zooLine(z: HubZoo?): LineState {
+        if (z == null) return noData()
+        return LineState("${HubFormat.num(z.totalPets)} pet · ${HubFormat.num(z.zooPoints)} điểm", Tone.INFO)
+    }
+
+    fun weaponsLine(w: HubWeapons?): LineState {
+        if (w == null || w.weapons.orEmpty().isEmpty()) return noData()
+        return LineState("${HubFormat.num(w.count ?: w.weapons?.size)} cây đã ghi nhận", Tone.INFO)
+    }
+
+    fun inventoryLine(inv: HubInventory?): LineState {
+        if (inv == null) return noData()
+        return LineState("${HubFormat.num(inv.kinds)} loại · ${HubFormat.num(inv.totalItems)} món", Tone.INFO)
+    }
+}

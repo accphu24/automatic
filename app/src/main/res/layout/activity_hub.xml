@@ -15,11 +15,12 @@
         android:paddingEnd="8dp">
 
         <TextView
+            android:id="@+id/tvHubTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/hub_title"
-            android:textSize="20sp"
+            android:textSize="22sp"
             android:textStyle="bold" />
 
         <com.google.android.material.button.MaterialButton
@@ -35,62 +36,97 @@
         android:id="@+id/tvHubStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:alpha="0.75"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
-        android:textSize="12sp"
+        android:textSize="13sp"
         tools:text="Cập nhật lúc 22:45:48 · tự làm mới mỗi 30 giây" />
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="6dp"
         android:layout_weight="1">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="12dp">
+            android:paddingStart="7dp"
+            android:paddingEnd="7dp"
+            android:paddingBottom="16dp">
+
+            <!-- 6 o tom tat: nhin la biet, khong can mo gi -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <include
+                    android:id="@+id/tileDaily"
+                    layout="@layout/item_hub_tile" />
+
+                <include
+                    android:id="@+id/tileHuntbot"
+                    layout="@layout/item_hub_tile" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <include
+                    android:id="@+id/tileCowoncy"
+                    layout="@layout/item_hub_tile" />
+
+                <include
+                    android:id="@+id/tileQuest"
+                    layout="@layout/item_hub_tile" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <include
+                    android:id="@+id/tileGems"
+                    layout="@layout/item_hub_tile" />
+
+                <include
+                    android:id="@+id/tileZoo"
+                    layout="@layout/item_hub_tile" />
+            </LinearLayout>
+
+            <!-- Cac the chi tiet: cham de mo/dong -->
+            <include
+                android:id="@+id/cardGems"
+                layout="@layout/item_hub_card" />
 
             <include
-                android:id="@+id/secDaily"
-                layout="@layout/item_hub_section" />
+                android:id="@+id/cardQuest"
+                layout="@layout/item_hub_card" />
 
             <include
-                android:id="@+id/secHuntbot"
-                layout="@layout/item_hub_section" />
+                android:id="@+id/cardTeam"
+                layout="@layout/item_hub_card" />
 
             <include
-                android:id="@+id/secCowoncy"
-                layout="@layout/item_hub_section" />
+                android:id="@+id/cardBattles"
+                layout="@layout/item_hub_card" />
 
             <include
-                android:id="@+id/secGems"
-                layout="@layout/item_hub_section" />
+                android:id="@+id/cardZoo"
+                layout="@layout/item_hub_card" />
 
             <include
-                android:id="@+id/secQuest"
-                layout="@layout/item_hub_section" />
+                android:id="@+id/cardWeapons"
+                layout="@layout/item_hub_card" />
 
             <include
-                android:id="@+id/secTeam"
-                layout="@layout/item_hub_section" />
-
-            <include
-                android:id="@+id/secBattles"
-                layout="@layout/item_hub_section" />
-
-            <include
-                android:id="@+id/secZoo"
-                layout="@layout/item_hub_section" />
-
-            <include
-                android:id="@+id/secWeapons"
-                layout="@layout/item_hub_section" />
-
-            <include
-                android:id="@+id/secInventory"
-                layout="@layout/item_hub_section" />
+                android:id="@+id/cardInventory"
+                layout="@layout/item_hub_card" />
 
         </LinearLayout>
     </ScrollView>

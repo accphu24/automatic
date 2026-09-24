@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mau trang thai cua man hinh Hub (nen sang). Ban toi o values-night/colors.xml -->
+    <color name="hub_ok">#2E7D32</color>
+    <color name="hub_info">#1565C0</color>
+    <color name="hub_warn">#E65100</color>
+    <color name="hub_bad">#C62828</color>
+    <color name="hub_idle">#757575</color>
+
+    <!-- Mau vach ben trai moi the chi tiet: moi muc 1 mau de de phan biet -->
+    <color name="hub_accent_gems">#00ACC1</color>
+    <color name="hub_accent_quest">#7E57C2</color>
+    <color name="hub_accent_team">#FF7043</color>
+    <color name="hub_accent_battles">#EC407A</color>
+    <color name="hub_accent_zoo">#66BB6A</color>
+    <color name="hub_accent_weapons">#8D6E63</color>
+    <color name="hub_accent_inventory">#FFB300</color>
+</resources>

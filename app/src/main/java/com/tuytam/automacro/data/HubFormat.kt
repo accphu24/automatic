@@ -51,6 +51,19 @@ object HubFormat {
         }
     }
 
+    /** Ban ngan cho o tom tat: 3725 -> "1g 02p", 125 -> "2p 05s", 40 -> "40s" */
+    fun shortDuration(seconds: Long): String {
+        val s = maxOf(seconds, 0L)
+        val h = s / 3600
+        val m = (s % 3600) / 60
+        val sec = s % 60
+        return when {
+            h > 0 -> String.format(Locale.US, "%dg %02dp", h, m)
+            m > 0 -> String.format(Locale.US, "%dp %02ds", m, sec)
+            else -> "${sec}s"
+        }
+    }
+
     /** 63 -> "▰▰▰▰▰▰▱▱▱▱" */
     fun bar(percent: Int?, width: Int = 10): String {
         val p = (percent ?: 0).coerceIn(0, 100)
