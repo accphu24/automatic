@@ -38,7 +38,6 @@ object HubParser {
             huntbot = section("huntbot", HubHuntbot::class.java),
             quest = section("quest", HubQuest::class.java),
             team = section("team", HubTeam::class.java),
-            battles = section("battles", HubBattles::class.java),
             zoo = section("zoo", HubZoo::class.java),
             inventory = section("inventory", HubInventory::class.java),
             weapons = section("weapons", HubWeapons::class.java),

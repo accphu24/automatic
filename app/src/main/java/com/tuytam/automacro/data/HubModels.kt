@@ -17,7 +17,6 @@ data class HubResponse(
     val huntbot: HubHuntbot? = null,
     val quest: HubQuest? = null,
     val team: HubTeam? = null,
-    val battles: HubBattles? = null,
     val zoo: HubZoo? = null,
     val inventory: HubInventory? = null,
     val weapons: HubWeapons? = null,
@@ -118,23 +117,6 @@ data class HubTeamMember(
     val mr: Long? = null,
     val weaponId: String? = null,
     val quality: Double? = null
-)
-
-// ---- Tran dau ----
-data class HubBattles(
-    @SerializedName("sample_size") val sampleSize: Int? = null,
-    val wins: Int? = null,
-    val losses: Int? = null,
-    @SerializedName("current_streak") val currentStreak: Int? = null,
-    val recent: List<HubBattle>? = null,
-    @SerializedName("age_seconds") val ageSeconds: Long? = null
-)
-
-data class HubBattle(
-    val result: String? = null,
-    val turns: Int? = null,
-    val xp: Long? = null,
-    val streak: Int? = null
 )
 
 // ---- Zoo (pet dang co) ----

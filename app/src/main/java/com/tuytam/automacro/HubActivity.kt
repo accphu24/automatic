@@ -72,7 +72,6 @@ class HubActivity : AppCompatActivity() {
             setupCard(KEY_GEMS, binding.cardGems, R.string.hub_section_gems, R.color.hub_accent_gems),
             setupCard(KEY_QUEST, binding.cardQuest, R.string.hub_section_quest, R.color.hub_accent_quest),
             setupCard(KEY_TEAM, binding.cardTeam, R.string.hub_section_team, R.color.hub_accent_team),
-            setupCard(KEY_BATTLES, binding.cardBattles, R.string.hub_section_battles, R.color.hub_accent_battles),
             setupCard(KEY_ZOO, binding.cardZoo, R.string.hub_section_zoo, R.color.hub_accent_zoo),
             setupCard(KEY_WEAPONS, binding.cardWeapons, R.string.hub_section_weapons, R.color.hub_accent_weapons),
             setupCard(KEY_INVENTORY, binding.cardInventory, R.string.hub_section_inventory, R.color.hub_accent_inventory)
@@ -179,7 +178,6 @@ class HubActivity : AppCompatActivity() {
         KEY_GEMS -> HubSummary.gemsLine(h.gems)
         KEY_QUEST -> HubSummary.questLine(h.quest)
         KEY_TEAM -> HubSummary.teamLine(h.team)
-        KEY_BATTLES -> HubSummary.battlesLine(h.battles)
         KEY_ZOO -> HubSummary.zooLine(h.zoo)
         KEY_WEAPONS -> HubSummary.weaponsLine(h.weapons)
         else -> HubSummary.inventoryLine(h.inventory)
@@ -190,7 +188,6 @@ class HubActivity : AppCompatActivity() {
             KEY_GEMS -> fillGems(body, h.gems)
             KEY_QUEST -> fillQuest(body, h.quest)
             KEY_TEAM -> addText(body, HubFormat.team(h.team))
-            KEY_BATTLES -> addText(body, HubFormat.battles(h.battles))
             KEY_ZOO -> addText(body, HubFormat.zoo(h.zoo, true))
             KEY_WEAPONS -> addText(body, HubFormat.weapons(h.weapons, true))
             else -> addText(body, HubFormat.inventory(h.inventory, true))
@@ -265,7 +262,6 @@ class HubActivity : AppCompatActivity() {
         setCardAge(KEY_GEMS, HubFormat.gemsAgeSeconds(h.gems), elapsed)
         setCardAge(KEY_QUEST, h.quest?.ageSeconds, elapsed)
         setCardAge(KEY_TEAM, h.team?.ageSeconds, elapsed)
-        setCardAge(KEY_BATTLES, h.battles?.ageSeconds, elapsed)
         setCardAge(KEY_ZOO, h.zoo?.ageSeconds, elapsed)
         setCardAge(KEY_WEAPONS, h.weapons?.ageSeconds, elapsed)
         setCardAge(KEY_INVENTORY, h.inventory?.ageSeconds, elapsed)
@@ -359,7 +355,6 @@ class HubActivity : AppCompatActivity() {
         private const val KEY_GEMS = "gems"
         private const val KEY_QUEST = "quest"
         private const val KEY_TEAM = "team"
-        private const val KEY_BATTLES = "battles"
         private const val KEY_ZOO = "zoo"
         private const val KEY_WEAPONS = "weapons"
         private const val KEY_INVENTORY = "inventory"

@@ -113,10 +113,6 @@
                 layout="@layout/item_hub_card" />
 
             <include
-                android:id="@+id/cardBattles"
-                layout="@layout/item_hub_card" />
-
-            <include
                 android:id="@+id/cardZoo"
                 layout="@layout/item_hub_card" />
 

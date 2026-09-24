@@ -217,18 +217,6 @@ object HubFormat {
         }
     }
 
-    fun battles(b: HubBattles?): String {
-        if (b == null) return noData(null)
-        val sb = StringBuilder()
-        sb.append("${b.sampleSize ?: 0} trận gần nhất: ${b.wins ?: 0} thắng · ${b.losses ?: 0} thua")
-        if (b.currentStreak != null) sb.append(" · Streak: ${b.currentStreak}")
-        for (r in b.recent.orEmpty()) {
-            val icon = if (r.result == "won") "✅" else "❌"
-            sb.append("\n$icon ${r.turns ?: "?"} lượt · +${num(r.xp)} xp · streak ${r.streak ?: "?"}")
-        }
-        return sb.toString()
-    }
-
     fun zoo(z: HubZoo?, expanded: Boolean): String {
         if (z == null) return noData("Gõ owo zoo để bot ghi nhận pet.")
         val sb = StringBuilder()

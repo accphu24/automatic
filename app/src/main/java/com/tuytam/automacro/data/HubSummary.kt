@@ -139,14 +139,6 @@ object HubSummary {
         return LineState("${members.size} pet: $shown", Tone.INFO)
     }
 
-    fun battlesLine(b: HubBattles?): LineState {
-        if (b == null) return noData()
-        val wins = b.wins ?: 0
-        val losses = b.losses ?: 0
-        val streak = if (b.currentStreak != null) " · streak ${b.currentStreak}" else ""
-        return LineState("$wins thắng · $losses thua$streak", if (wins >= losses) Tone.OK else Tone.WARN)
-    }
-
     fun zooLine(z: HubZoo?): LineState {
         if (z == null) return noData()
         return LineState("${HubFormat.num(z.totalPets)} pet · ${HubFormat.num(z.zooPoints)} điểm", Tone.INFO)

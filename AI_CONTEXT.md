@@ -46,7 +46,7 @@ dien thoai). Xem muc "Ket noi voi owo-tracker" ben duoi.
   giay chi cap nhat dong ho + chu "X phut truoc".
   GIAO DIEN: 6 o tom tat o tren (Daily, HuntBot, Cowoncy, Quest, Gem, Pet) - moi o 1 so to + 1 mau
   trang thai (xanh la=xong/san sang, xanh duong=dem nguoc, cam=de y, do=can lam ngay, xam=chua co
-  du lieu; logic o data/HubSummary.kt). Ben duoi la 7 the chi tiet moi the 1 mau rieng, luon co 1 dong
+  du lieu; logic o data/HubSummary.kt). Ben duoi la 6 the chi tiet (Gem, Quest, Doi hinh, Pet, Vu khi, Kho) moi the 1 mau rieng, luon co 1 dong
   tom tat, cham de mo/dong (Gem + Quest mo san). Gem/Quest dung ProgressBar that. Mau o res/values
   (+ values-night). Layout: activity_hub, item_hub_tile, item_hub_card.
   Muc nao bot chua tung thay thi hien "Chua co du lieu". HubFormat.kt la ham thuan (khong
@@ -55,6 +55,7 @@ dien thoai). Xem muc "Ket noi voi owo-tracker" ben duoi.
   So co the rat lon (vd essence) nen dung Long, khong dung Int.
   Co them the Daily (dem nguoc gio nhan + streak), Cowoncy, va Quest (dem nguoc quest ke tiep
   + tung quest: ten, tien do, mo ta, thuong).
+  Khong con doc/hien battle (Ruby khong can) - owo-tracker cung da bo phan doc battle.
   KHONG co profile: `owo profile` cua OwO la 1 tam ANH (khong co chu) nen bot khong doc duoc.
 
 ## Chua co (con thieu)
