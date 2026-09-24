@@ -20,7 +20,9 @@ data class HubResponse(
     val battles: HubBattles? = null,
     val zoo: HubZoo? = null,
     val inventory: HubInventory? = null,
-    val weapons: HubWeapons? = null
+    val weapons: HubWeapons? = null,
+    /** Muc nao khong doc duoc -> ten muc + ly do (vd "zoo" -> "Expected BEGIN_ARRAY..."). Cac muc con lai van hien binh thuong. */
+    val sectionErrors: Map<String, String>? = null
 )
 
 // ---- Daily + Cowoncy ----
@@ -47,8 +49,8 @@ data class HubGems(
 data class HubGemEquipped(
     val slot: String? = null,
     val tier: String? = null,
-    val current: Int? = null,
-    val max: Int? = null,
+    val current: Long? = null,
+    val max: Long? = null,
     val percent: Int? = null,
     @SerializedName("age_seconds") val ageSeconds: Long? = null
 )
@@ -57,15 +59,15 @@ data class HubGemSpare(
     val code: String? = null,
     val slot: String? = null,
     val tier: String? = null,
-    val count: Int? = null
+    val count: Long? = null
 )
 
 // ---- HuntBot ----
 data class HubHuntbot(
     val hunting: Boolean? = null,
     @SerializedName("progress_pct") val progressPct: Double? = null,
-    @SerializedName("animals_captured") val animalsCaptured: Int? = null,
-    val essence: Int? = null,
+    @SerializedName("animals_captured") val animalsCaptured: Long? = null,
+    val essence: Long? = null,
     @SerializedName("time_remaining_text") val timeRemainingText: String? = null,
     @SerializedName("ready_at") val readyAt: String? = null,
     @SerializedName("seconds_left") val secondsLeft: Long? = null,
@@ -74,7 +76,7 @@ data class HubHuntbot(
 
 // ---- Quest ----
 data class HubQuest(
-    val seals: Int? = null,
+    val seals: Long? = null,
     @SerializedName("all_done") val allDone: Boolean? = null,
     @SerializedName("next_quest") val nextQuest: String? = null,
     @SerializedName("next_quest_seconds") val nextQuestSeconds: Long? = null,
@@ -108,12 +110,12 @@ data class HubTeamMember(
     val pos: Int? = null,
     val name: String? = null,
     val level: Int? = null,
-    val hp: Int? = null,
-    val wp: Int? = null,
-    val att: Int? = null,
-    val mag: Int? = null,
-    val pr: Int? = null,
-    val mr: Int? = null,
+    val hp: Long? = null,
+    val wp: Long? = null,
+    val att: Long? = null,
+    val mag: Long? = null,
+    val pr: Long? = null,
+    val mr: Long? = null,
     val weaponId: String? = null,
     val quality: Double? = null
 )
@@ -131,7 +133,7 @@ data class HubBattles(
 data class HubBattle(
     val result: String? = null,
     val turns: Int? = null,
-    val xp: Int? = null,
+    val xp: Long? = null,
     val streak: Int? = null
 )
 
@@ -139,7 +141,7 @@ data class HubBattle(
 data class HubZoo(
     @SerializedName("zoo_points") val zooPoints: Long? = null,
     @SerializedName("breakdown_raw") val breakdownRaw: String? = null,
-    @SerializedName("total_pets") val totalPets: Int? = null,
+    @SerializedName("total_pets") val totalPets: Long? = null,
     @SerializedName("by_tier") val byTier: Map<String, HubTier>? = null,
     val pets: List<HubPet>? = null,
     @SerializedName("age_seconds") val ageSeconds: Long? = null
@@ -147,19 +149,19 @@ data class HubZoo(
 
 data class HubTier(
     val species: Int? = null,
-    val total: Int? = null
+    val total: Long? = null
 )
 
 data class HubPet(
     val tier: String? = null,
     val name: String? = null,
-    val count: Int? = null
+    val count: Long? = null
 )
 
 // ---- Kho do ----
 data class HubInventory(
     val kinds: Int? = null,
-    @SerializedName("total_items") val totalItems: Int? = null,
+    @SerializedName("total_items") val totalItems: Long? = null,
     val items: List<HubItem>? = null,
     @SerializedName("age_seconds") val ageSeconds: Long? = null
 )
@@ -167,7 +169,7 @@ data class HubInventory(
 data class HubItem(
     val code: String? = null,
     val name: String? = null,
-    val count: Int? = null,
+    val count: Long? = null,
     @SerializedName("is_gem") val isGem: Boolean? = null
 )
 

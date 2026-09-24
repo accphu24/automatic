@@ -117,13 +117,19 @@ class HubActivity : AppCompatActivity() {
     /** Ve lai noi dung cac muc — chi khi co du lieu moi hoac khi cham mo rong/thu gon. */
     private fun renderBodies() {
         val h = hub ?: return
-        binding.secCowoncy.tvSectionBody.text = HubFormat.cowoncy(h.cowoncy)
-        binding.secGems.tvSectionBody.text = HubFormat.gems(h.gems)
-        binding.secTeam.tvSectionBody.text = HubFormat.team(h.team)
-        binding.secBattles.tvSectionBody.text = HubFormat.battles(h.battles)
-        binding.secZoo.tvSectionBody.text = HubFormat.zoo(h.zoo, KEY_ZOO in expanded)
-        binding.secWeapons.tvSectionBody.text = HubFormat.weapons(h.weapons, KEY_WEAPONS in expanded)
-        binding.secInventory.tvSectionBody.text = HubFormat.inventory(h.inventory, KEY_INVENTORY in expanded)
+        binding.secCowoncy.tvSectionBody.text = bodyOf(h, "cowoncy") { HubFormat.cowoncy(h.cowoncy) }
+        binding.secGems.tvSectionBody.text = bodyOf(h, "gems") { HubFormat.gems(h.gems) }
+        binding.secTeam.tvSectionBody.text = bodyOf(h, "team") { HubFormat.team(h.team) }
+        binding.secBattles.tvSectionBody.text = bodyOf(h, "battles") { HubFormat.battles(h.battles) }
+        binding.secZoo.tvSectionBody.text = bodyOf(h, "zoo") { HubFormat.zoo(h.zoo, KEY_ZOO in expanded) }
+        binding.secWeapons.tvSectionBody.text = bodyOf(h, "weapons") { HubFormat.weapons(h.weapons, KEY_WEAPONS in expanded) }
+        binding.secInventory.tvSectionBody.text = bodyOf(h, "inventory") { HubFormat.inventory(h.inventory, KEY_INVENTORY in expanded) }
+    }
+
+    /** Muc nao doc loi thi hien ly do thay vi de trong; muc con lai van binh thuong. */
+    private fun bodyOf(h: HubResponse, key: String, build: () -> String): String {
+        val error = h.sectionErrors?.get(key)
+        return if (error != null) HubFormat.sectionError(error) else build()
     }
 
     /** Phan phu thuoc thoi gian: dem nguoc (Daily, HuntBot, Quest) va chu "X phut truoc" cua moi muc. */
@@ -131,9 +137,9 @@ class HubActivity : AppCompatActivity() {
         val h = hub ?: return
         val elapsed = (SystemClock.elapsedRealtime() - fetchedAtMs) / 1000L
 
-        binding.secDaily.tvSectionBody.text = HubFormat.daily(h.daily, elapsed)
-        binding.secHuntbot.tvSectionBody.text = HubFormat.huntbot(h.huntbot, elapsed)
-        binding.secQuest.tvSectionBody.text = HubFormat.quest(h.quest, elapsed)
+        binding.secDaily.tvSectionBody.text = bodyOf(h, "daily") { HubFormat.daily(h.daily, elapsed) }
+        binding.secHuntbot.tvSectionBody.text = bodyOf(h, "huntbot") { HubFormat.huntbot(h.huntbot, elapsed) }
+        binding.secQuest.tvSectionBody.text = bodyOf(h, "quest") { HubFormat.quest(h.quest, elapsed) }
 
         setAge(binding.secDaily, h.daily?.ageSeconds, elapsed)
         setAge(binding.secHuntbot, h.huntbot?.ageSeconds, elapsed)

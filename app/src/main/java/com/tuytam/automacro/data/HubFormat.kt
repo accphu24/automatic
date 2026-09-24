@@ -58,6 +58,9 @@ object HubFormat {
         return "▰".repeat(filled) + "▱".repeat(width - filled)
     }
 
+    /** Hien thay cho noi dung 1 muc khi muc do khong doc duoc (cac muc khac van binh thuong). */
+    fun sectionError(reason: String): String = "⚠️ Không đọc được mục này:\n$reason"
+
     private fun noData(hint: String?): String =
         "Chưa có dữ liệu — bot chưa thấy tin nhắn nào cho mục này." +
             (if (hint.isNullOrBlank()) "" else "\n$hint")
@@ -218,7 +221,7 @@ object HubFormat {
         val sb = StringBuilder()
         sb.append("Zoo Points: ${num(z.zooPoints)} · Tổng ${num(z.totalPets)} pet")
         for ((tier, t) in z.byTier.orEmpty()) {
-            if ((t.total ?: 0) > 0) sb.append("\n• $tier: ${num(t.total)} con · ${num(t.species)} loài")
+            if ((t.total ?: 0L) > 0L) sb.append("\n• $tier: ${num(t.total)} con · ${num(t.species)} loài")
         }
         if (expanded) {
             if (!z.breakdownRaw.isNullOrBlank()) sb.append("\n\nChi tiết: ${z.breakdownRaw}")

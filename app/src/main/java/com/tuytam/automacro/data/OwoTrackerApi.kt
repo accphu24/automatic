@@ -83,15 +83,14 @@ object OwoTrackerApi {
                 return@withContext HubResult.Failure("Bot báo lỗi (HTTP $code)")
             }
             val body = conn.inputStream.bufferedReader().readText()
-            val hub = gson.fromJson(body, HubResponse::class.java)
-            if (hub == null) {
+            if (body.isBlank()) {
                 HubResult.Failure("Bot trả về dữ liệu trống")
             } else {
-                HubResult.Success(hub)
+                HubResult.Success(HubParser.parse(body))
             }
         } catch (e: JsonParseException) {
             Log.w(TAG, "fetchHub doc JSON loi: ${e.message}")
-            HubResult.Failure("Dữ liệu từ bot không đọc được")
+            HubResult.Failure("Dữ liệu từ bot không đọc được (${(e.message ?: "lỗi không rõ").take(120)})")
         } catch (e: Exception) {
             Log.w(TAG, "fetchHub loi: ${e.message}")
             HubResult.Failure("Không kết nối được tới bot — kiểm tra mạng và địa chỉ API")
