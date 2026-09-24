@@ -78,4 +78,21 @@
     <string name="on_fail_stop">Dừng kịch bản (mặc định)</string>
     <string name="on_fail_prefix">Nhảy tới:</string>
     <string name="on_fail_note_prefix">nếu lỗi</string>
+
+    <!-- Man hinh Hub -->
+    <string name="btn_open_hub">🧭 Mở Hub OwO</string>
+    <string name="hub_title">🧭 Hub OwO</string>
+    <string name="hub_refresh">Làm mới</string>
+    <string name="hub_loading">Đang lấy dữ liệu từ bot…</string>
+    <string name="hub_need_settings">Chưa cài kết nối — vào ⚙️ Kết nối owo-tracker, điền địa chỉ API và token trước.</string>
+    <string name="hub_updated_at">Cập nhật lúc %1$s · tự làm mới mỗi 30 giây</string>
+    <string name="hub_showing_old_data">(đang hiện dữ liệu lần trước)</string>
+    <string name="hub_section_huntbot">🤖 HuntBot</string>
+    <string name="hub_section_gems">💎 Gem</string>
+    <string name="hub_section_quest">📋 Quest</string>
+    <string name="hub_section_team">⚔️ Đội hình</string>
+    <string name="hub_section_battles">🏆 Trận đấu</string>
+    <string name="hub_section_zoo">🐾 Pet (Zoo)</string>
+    <string name="hub_section_weapons">🗡️ Vũ khí</string>
+    <string name="hub_section_inventory">🎒 Kho đồ</string>
 </resources>

@@ -19,6 +19,13 @@
             tools:text="Trạng thái quyền: Chưa bật" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnOpenHub"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="@string/btn_open_hub" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnOpenAccessibilitySettings"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

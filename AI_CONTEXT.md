@@ -39,6 +39,16 @@ dien thoai). Xem muc "Ket noi voi owo-tracker" ben duoi.
   bao done/failed. Don gian hoa tu ban dau (bo phan tao kich ban rieng + khop ten,
   vi Ruby thay qua phuc tap) - gio KHONG can Room/kich ban cho phan nay nua.
 
+- Man hinh HUB (nut "Mo Hub OwO" o man hinh chinh -> HubActivity): hien du lieu moi
+  nhat owo-tracker da doc duoc tu tin nhan OwO (HuntBot co dong ho dem nguoc, gem dang
+  dung + gem du phong, quest, doi hinh, tran dau, pet/zoo, vu khi, kho do). Goi
+  GET /hub (cung token voi /commands/pending), tu lam moi moi 30 giay khi dang mo, moi
+  giay chi cap nhat dong ho + chu "X phut truoc". Cham the Zoo/Vu khi/Kho do de mo rong.
+  Muc nao bot chua tung thay thi hien "Chua co du lieu". HubFormat.kt la ham thuan (khong
+  dung Android) chuyen JSON thanh chu; HubModels.kt la cac lop Gson khop JSON cua /hub.
+  CHUA co: daily, profile, tien (cowoncy) - can owo-tracker doc them tin nhan `owo daily`,
+  `owo profile` truoc (can mau tin nhan that tu Ruby).
+
 ## Chua co (con thieu)
 - Sua lai 1 kich ban DA LUU tu Room (hien chi xoa lam lai duoc, chua mo lai de sua).
 - Doi thu tu buoc bang keo-tha.
@@ -50,7 +60,7 @@ dien thoai). Xem muc "Ket noi voi owo-tracker" ben duoi.
 
 ## Ket noi voi owo-tracker (repo rieng)
 - owo-tracker (Python, chay Railway) co API rieng: GET /commands/pending,
-  POST /commands/{id}/ack, xac thuc bang header Authorization: Bearer <token>.
+  POST /commands/{id}/ack, GET /hub (du lieu cho man hinh Hub), xac thuc bang header Authorization: Bearer <token>.
   Token nay KHAC MONGODB_URI - dien thoai khong bao gio cam chuoi ket noi Mongo that.
 - Ca 2 phia phai dat CUNG 1 token: owo-tracker qua bien moi truong AUTOMACRO_API_TOKEN,
   AutoMacro qua man hinh Cai dat trong app (luu SharedPreferences, khong phai Room).
@@ -75,13 +85,14 @@ dien thoai). Xem muc "Ket noi voi owo-tracker" ben duoi.
 ## Cau truc thu muc chinh
 app/src/main/java/com/tuytam/automacro/
   MainActivity.kt                         - danh sach kich ban, nut chay mau, ghi, cai dat
+  HubActivity.kt                          - man hinh Hub (xem du lieu OwO tu owo-tracker)
   ScriptEditorActivity.kt                  - tao/sua kich ban, nap buoc tu ban ghi
   ScriptListAdapter.kt                     - hien danh sach kich ban da luu
   service/AutoAccessibilityService.kt      - chay kich ban + che do ghi + bong bong + dong bo
   engine/ScriptEngine.kt                   - bo may thuc thi tung buoc
   data/                                    - ScriptStep, ScriptEntity/Dao/Database, ScriptJson,
                                               ScriptRepository, SampleScripts, StepSummary,
-                                              OwoTrackerApi, OwoTrackerPrefs
+                                              OwoTrackerApi, OwoTrackerPrefs, HubModels, HubFormat
 
 ## Ghi chu quan trong
 - Nguoi dung phai tu vao Cai dat may bat quyen Accessibility (khong the tu bat bang code)

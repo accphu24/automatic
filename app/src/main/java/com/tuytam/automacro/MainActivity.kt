@@ -48,6 +48,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        binding.btnOpenHub.setOnClickListener {
+            startActivity(Intent(this, HubActivity::class.java))
+        }
+
         binding.btnOpenAccessibilitySettings.setOnClickListener {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
