@@ -69,6 +69,33 @@ object HubFormat {
 
     // ---------- Tung muc ----------
 
+    /** elapsedSec = so giay tu luc app lay du lieu (de dem nguoc chay muot giua 2 lan lam moi). */
+    fun daily(d: HubDaily?, elapsedSec: Long): String {
+        if (d == null) return noData("Gõ owo daily 1 lần để bot ghi nhận.")
+        val sb = StringBuilder()
+        val left = d.secondsLeft
+        if (left == null) {
+            sb.append("Chưa rõ giờ nhận kế tiếp")
+        } else {
+            val remain = left - elapsedSec
+            if (remain > 0) {
+                sb.append("⏳ Còn ${duration(remain)} nữa mới nhận được")
+            } else {
+                sb.append("✅ Daily đã sẵn sàng — gõ owo daily để nhận")
+            }
+        }
+        val extras = mutableListOf<String>()
+        if (d.streak != null) extras.add("🔥 Streak: ${num(d.streak)} ngày")
+        if (d.lastReward != null) extras.add("Lần nhận gần nhất: ${num(d.lastReward)} cowoncy")
+        if (extras.isNotEmpty()) sb.append("\n").append(extras.joinToString(" · "))
+        return sb.toString()
+    }
+
+    fun cowoncy(c: HubCowoncy?): String {
+        if (c == null || c.amount == null) return noData("Gõ owo money để bot ghi nhận.")
+        return "${num(c.amount)} cowoncy"
+    }
+
     fun gems(g: HubGems?): String {
         if (g == null) return noData("Gõ owo hunt để ghi nhận gem đang dùng, owo inventory để ghi nhận kho.")
         val sb = StringBuilder()
@@ -126,11 +153,21 @@ object HubFormat {
         return sb.toString()
     }
 
-    fun quest(q: HubQuest?): String {
+    fun quest(q: HubQuest?, elapsedSec: Long): String {
         if (q == null) return noData(null)
         val sb = StringBuilder(if (q.allDone == true) "✅ Đã xong hết quest" else "📋 Còn quest chưa xong")
         if (q.seals != null) sb.append(" · Seals: ${num(q.seals)}")
-        if (!q.nextQuest.isNullOrBlank()) sb.append("\nKế tiếp: ${q.nextQuest}")
+        val nextSec = q.nextQuestSeconds
+        if (nextSec != null) {
+            val remain = nextSec - elapsedSec
+            if (remain > 0) {
+                sb.append("\n⏰ Quest mới sau ${duration(remain)}")
+            } else {
+                sb.append("\n⏰ Đã có quest mới (theo mốc bot ghi nhận)")
+            }
+        } else if (!q.nextQuest.isNullOrBlank()) {
+            sb.append("\nKế tiếp: ${q.nextQuest}")
+        }
         return sb.toString()
     }
 

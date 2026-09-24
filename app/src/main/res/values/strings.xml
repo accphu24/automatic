@@ -87,6 +87,8 @@
     <string name="hub_need_settings">Chưa cài kết nối — vào ⚙️ Kết nối owo-tracker, điền địa chỉ API và token trước.</string>
     <string name="hub_updated_at">Cập nhật lúc %1$s · tự làm mới mỗi 30 giây</string>
     <string name="hub_showing_old_data">(đang hiện dữ liệu lần trước)</string>
+    <string name="hub_section_daily">⏰ Daily</string>
+    <string name="hub_section_cowoncy">💰 Cowoncy</string>
     <string name="hub_section_huntbot">🤖 HuntBot</string>
     <string name="hub_section_gems">💎 Gem</string>
     <string name="hub_section_quest">📋 Quest</string>

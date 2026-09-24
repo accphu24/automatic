@@ -42,7 +42,9 @@ class HubActivity : AppCompatActivity() {
         binding = ActivityHubBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        binding.secDaily.tvSectionTitle.setText(R.string.hub_section_daily)
         binding.secHuntbot.tvSectionTitle.setText(R.string.hub_section_huntbot)
+        binding.secCowoncy.tvSectionTitle.setText(R.string.hub_section_cowoncy)
         binding.secGems.tvSectionTitle.setText(R.string.hub_section_gems)
         binding.secQuest.tvSectionTitle.setText(R.string.hub_section_quest)
         binding.secTeam.tvSectionTitle.setText(R.string.hub_section_team)
@@ -115,8 +117,8 @@ class HubActivity : AppCompatActivity() {
     /** Ve lai noi dung cac muc — chi khi co du lieu moi hoac khi cham mo rong/thu gon. */
     private fun renderBodies() {
         val h = hub ?: return
+        binding.secCowoncy.tvSectionBody.text = HubFormat.cowoncy(h.cowoncy)
         binding.secGems.tvSectionBody.text = HubFormat.gems(h.gems)
-        binding.secQuest.tvSectionBody.text = HubFormat.quest(h.quest)
         binding.secTeam.tvSectionBody.text = HubFormat.team(h.team)
         binding.secBattles.tvSectionBody.text = HubFormat.battles(h.battles)
         binding.secZoo.tvSectionBody.text = HubFormat.zoo(h.zoo, KEY_ZOO in expanded)
@@ -124,14 +126,18 @@ class HubActivity : AppCompatActivity() {
         binding.secInventory.tvSectionBody.text = HubFormat.inventory(h.inventory, KEY_INVENTORY in expanded)
     }
 
-    /** Phan phu thuoc thoi gian: dem nguoc HuntBot va chu "X phut truoc" cua moi muc. */
+    /** Phan phu thuoc thoi gian: dem nguoc (Daily, HuntBot, Quest) va chu "X phut truoc" cua moi muc. */
     private fun renderTimed() {
         val h = hub ?: return
         val elapsed = (SystemClock.elapsedRealtime() - fetchedAtMs) / 1000L
 
+        binding.secDaily.tvSectionBody.text = HubFormat.daily(h.daily, elapsed)
         binding.secHuntbot.tvSectionBody.text = HubFormat.huntbot(h.huntbot, elapsed)
+        binding.secQuest.tvSectionBody.text = HubFormat.quest(h.quest, elapsed)
 
+        setAge(binding.secDaily, h.daily?.ageSeconds, elapsed)
         setAge(binding.secHuntbot, h.huntbot?.ageSeconds, elapsed)
+        setAge(binding.secCowoncy, h.cowoncy?.ageSeconds, elapsed)
         setAge(binding.secGems, HubFormat.gemsAgeSeconds(h.gems), elapsed)
         setAge(binding.secQuest, h.quest?.ageSeconds, elapsed)
         setAge(binding.secTeam, h.team?.ageSeconds, elapsed)

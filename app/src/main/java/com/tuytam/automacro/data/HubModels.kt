@@ -11,6 +11,8 @@ import com.google.gson.annotations.SerializedName
 data class HubResponse(
     @SerializedName("hub_version") val hubVersion: Int? = null,
     @SerializedName("server_time") val serverTime: String? = null,
+    val daily: HubDaily? = null,
+    val cowoncy: HubCowoncy? = null,
     val gems: HubGems? = null,
     val huntbot: HubHuntbot? = null,
     val quest: HubQuest? = null,
@@ -19,6 +21,21 @@ data class HubResponse(
     val zoo: HubZoo? = null,
     val inventory: HubInventory? = null,
     val weapons: HubWeapons? = null
+)
+
+// ---- Daily + Cowoncy ----
+data class HubDaily(
+    val state: String? = null,
+    val streak: Int? = null,
+    @SerializedName("last_reward") val lastReward: Long? = null,
+    @SerializedName("ready_at") val readyAt: String? = null,
+    @SerializedName("seconds_left") val secondsLeft: Long? = null,
+    @SerializedName("age_seconds") val ageSeconds: Long? = null
+)
+
+data class HubCowoncy(
+    val amount: Long? = null,
+    @SerializedName("age_seconds") val ageSeconds: Long? = null
 )
 
 // ---- Gem ----
@@ -60,6 +77,7 @@ data class HubQuest(
     val seals: Int? = null,
     @SerializedName("all_done") val allDone: Boolean? = null,
     @SerializedName("next_quest") val nextQuest: String? = null,
+    @SerializedName("next_quest_seconds") val nextQuestSeconds: Long? = null,
     @SerializedName("age_seconds") val ageSeconds: Long? = null
 )
 
