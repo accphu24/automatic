@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nen chuyen sac nhe cho man hinh Hub (ban toi). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="135"
+        android:startColor="#14121F"
+        android:centerColor="#12141F"
+        android:endColor="#0F1A18"
+        android:type="linear" />
+</shape>

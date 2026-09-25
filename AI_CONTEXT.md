@@ -56,6 +56,16 @@ dien thoai). Xem muc "Ket noi voi owo-tracker" ben duoi.
   Co them the Daily (dem nguoc gio nhan + streak), Cowoncy, va Quest (dem nguoc quest ke tiep
   + tung quest: ten, tien do, mo ta, thuong).
   Khong con doc/hien battle (Ruby khong can) - owo-tracker cung da bo phan doc battle.
+  GIAO DIEN v2 (icon that + bieu do): moi pet/gem/tier/thanh vien doi hinh/phan thuong quest
+  co the mang emoji_id/emoji_animated (ID that cua Discord, xem view/EmojiImageLoader.kt tai
+  qua CDN https://cdn.discordapp.com/emojis/<id>.png) hoac emoji (ky tu Unicode co san, cho
+  con vat OwO hien bang emoji chuan nhu :bee:). data/HubIcons.kt chon icon phu hop (uu tien
+  anh that > Unicode > chu cai dau). view/IconView.kt la 1 o hien icon dung chung (FrameLayout:
+  ImageView + TextView), can 1 CoroutineScope (lifecycleScope cua Activity) truyen vao bind().
+  view/RingView.kt ve vong tron % bang Canvas (dung cho gem/quest/huntbot/daily). view/
+  BarChartView.kt ve cot ngang so sanh so pet theo tier (trong the Zoo, khi mo rong). Nen man
+  hinh Hub co gradient nhe (drawable/bg_hub_root.xml + drawable-night). Icon tai qua mang duoc
+  cache trong bo nho (EmojiImageLoader), mat khi dong app - khong ghi the nho.
   KHONG co profile: `owo profile` cua OwO la 1 tam ANH (khong co chu) nen bot khong doc duoc.
 
 ## Chua co (con thieu)

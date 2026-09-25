@@ -1,30 +1,44 @@
 package com.tuytam.automacro
 
-import android.content.res.ColorStateList
-import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.SystemClock
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.tuytam.automacro.data.HubFormat
 import com.tuytam.automacro.data.HubGems
 import com.tuytam.automacro.data.HubQuest
+import com.tuytam.automacro.data.HubReward
 import com.tuytam.automacro.data.HubResponse
 import com.tuytam.automacro.data.HubResult
 import com.tuytam.automacro.data.HubSummary
+import com.tuytam.automacro.data.HubTeam
+import com.tuytam.automacro.data.IconSpec
 import com.tuytam.automacro.data.LineState
 import com.tuytam.automacro.data.OwoTrackerApi
 import com.tuytam.automacro.data.OwoTrackerPrefs
 import com.tuytam.automacro.data.TileState
 import com.tuytam.automacro.data.Tone
+import com.tuytam.automacro.data.gemsTileIcon
+import com.tuytam.automacro.data.iconOf
+import com.tuytam.automacro.data.inventoryCardIcon
+import com.tuytam.automacro.data.questTileIcon
+import com.tuytam.automacro.data.teamCardIcon
+import com.tuytam.automacro.data.weaponsCardIcon
+import com.tuytam.automacro.data.zooTileIcon
 import com.tuytam.automacro.databinding.ActivityHubBinding
 import com.tuytam.automacro.databinding.ItemHubCardBinding
 import com.tuytam.automacro.databinding.ItemHubTileBinding
+import com.tuytam.automacro.view.BarChartView
+import com.tuytam.automacro.view.BarEntry
+import com.tuytam.automacro.view.IconView
+import com.tuytam.automacro.view.RingView
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -35,11 +49,13 @@ import java.util.Locale
 
 /**
  * Man hinh Hub. Bo cuc:
- *  - 6 O TOM TAT o tren cung (Daily, HuntBot, Cowoncy, Quest, Gem, Pet): moi o 1 so to
- *    + 1 mau trang thai (xanh la = xong/san sang, xanh duong = dang dem nguoc,
- *    cam = nen de y, do = can lam ngay, xam = chua co du lieu).
- *  - THE CHI TIET ben duoi: moi the 1 mau rieng, luon hien 1 dong tom tat, cham vao de
- *    mo/dong noi dung day du. Gem va Quest mo san, cac the con lai dong cho do dai.
+ *  - 6 O TOM TAT o tren cung (Daily, HuntBot, Cowoncy, Quest, Gem, Pet): moi o co 1 vong
+ *    tron % (khi co y nghia) + 1 icon THAT (anh emoji cua Discord, hoac Unicode, hoac
+ *    chu cai dau) + 1 so to + mau trang thai (xanh la = xong/san sang, xanh duong = dang
+ *    dem nguoc, cam = nen de y, do = can lam ngay, xam = chua co du lieu).
+ *  - THE CHI TIET ben duoi: moi the 1 mau rieng + icon rieng o tieu de, luon hien 1 dong
+ *    tom tat, cham vao de mo/dong noi dung day du. Gem/Quest dung vong tron % + icon that
+ *    cho tung dong; Zoo co them bieu do cot so sanh so pet theo tier khi mo rong.
  *  - Tu lay lai du lieu moi 30 giay; moi giay chi cap nhat dong ho dem nguoc + "X phut truoc".
  */
 class HubActivity : AppCompatActivity() {
@@ -54,7 +70,7 @@ class HubActivity : AppCompatActivity() {
     private var fetchJob: Job? = null
     private var tickJob: Job? = null
 
-    private class Card(val key: String, val ui: ItemHubCardBinding)
+    private class Card(val key: String, val ui: ItemHubCardBinding, val accentColor: Int)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,13 +93,12 @@ class HubActivity : AppCompatActivity() {
             setupCard(KEY_INVENTORY, binding.cardInventory, R.string.hub_section_inventory, R.color.hub_accent_inventory)
         )
 
-        // Truoc khi co du lieu: cac o hien dau "—" thay vi de trong
-        applyTile(binding.tileDaily, TileState("…", "Đang lấy dữ liệu", Tone.IDLE))
-        applyTile(binding.tileHuntbot, TileState("…", "Đang lấy dữ liệu", Tone.IDLE))
-        applyTile(binding.tileCowoncy, TileState("…", "Đang lấy dữ liệu", Tone.IDLE))
-        applyTile(binding.tileQuest, TileState("…", "Đang lấy dữ liệu", Tone.IDLE))
-        applyTile(binding.tileGems, TileState("…", "Đang lấy dữ liệu", Tone.IDLE))
-        applyTile(binding.tileZoo, TileState("…", "Đang lấy dữ liệu", Tone.IDLE))
+        // Truoc khi co du lieu: cac o hien dau "…" thay vi de trong
+        val loading = TileState("…", "Đang lấy dữ liệu", Tone.IDLE)
+        for (t in listOf(binding.tileDaily, binding.tileHuntbot, binding.tileCowoncy,
+                         binding.tileQuest, binding.tileGems, binding.tileZoo)) {
+            applyTile(t, loading)
+        }
 
         binding.btnHubRefresh.setOnClickListener {
             lifecycleScope.launch { loadHub() }
@@ -91,15 +106,18 @@ class HubActivity : AppCompatActivity() {
     }
 
     private fun setupCard(key: String, ui: ItemHubCardBinding, titleRes: Int, accentRes: Int): Card {
+        val accentColor = getColor(accentRes)
         ui.tvCardTitle.setText(titleRes)
-        ui.vAccent.setBackgroundColor(getColor(accentRes))
+        ui.vAccent.setBackgroundColor(accentColor)
+        ui.flCardIconBg.background = circleDrawable(withAlpha(accentColor, 40))
+        ui.ivCardIcon.bind(lifecycleScope, IconSpec(unicode = "•"))
         ui.tvCardSummary.text = ""
         ui.tvCardArrow.text = if (key in expanded) ARROW_OPEN else ARROW_CLOSED
         ui.root.setOnClickListener {
             if (!expanded.add(key)) expanded.remove(key)
             renderBodies()
         }
-        return Card(key, ui)
+        return Card(key, ui, accentColor)
     }
 
     override fun onResume() {
@@ -154,7 +172,7 @@ class HubActivity : AppCompatActivity() {
     // Ve giao dien
     // ------------------------------------------------------------------
 
-    /** Ve lai dong tom tat + noi dung cac the — khi co du lieu moi hoac khi cham mo/dong. */
+    /** Ve lai dong tom tat + icon tieu de + noi dung cac the — khi co du lieu moi hoac khi cham mo/dong. */
     private fun renderBodies() {
         val h = hub ?: return
         for (card in cards) {
@@ -163,6 +181,7 @@ class HubActivity : AppCompatActivity() {
             val ui = card.ui
             ui.tvCardSummary.text = line.text
             ui.tvCardSummary.setTextColor(toneColor(line.tone))
+            ui.ivCardIcon.bind(lifecycleScope, if (error != null) IconSpec(unicode = "⚠️") else cardIconFor(card.key, h))
 
             val open = card.key in expanded
             ui.tvCardArrow.text = if (open) ARROW_OPEN else ARROW_CLOSED
@@ -183,12 +202,24 @@ class HubActivity : AppCompatActivity() {
         else -> HubSummary.inventoryLine(h.inventory)
     }
 
+    private fun cardIconFor(key: String, h: HubResponse): IconSpec = when (key) {
+        KEY_GEMS -> gemsTileIcon(h.gems)
+        KEY_QUEST -> questTileIcon(h.quest)
+        KEY_TEAM -> teamCardIcon(h.team)
+        KEY_ZOO -> zooTileIcon(h.zoo)
+        KEY_WEAPONS -> weaponsCardIcon()
+        else -> inventoryCardIcon()
+    }
+
     private fun fillBody(key: String, h: HubResponse, body: LinearLayout) {
         when (key) {
             KEY_GEMS -> fillGems(body, h.gems)
             KEY_QUEST -> fillQuest(body, h.quest)
-            KEY_TEAM -> addText(body, HubFormat.team(h.team))
-            KEY_ZOO -> addText(body, HubFormat.zoo(h.zoo, true))
+            KEY_TEAM -> fillTeam(body, h.team)
+            KEY_ZOO -> {
+                fillZooChart(body, h.zoo)
+                addText(body, HubFormat.zoo(h.zoo, true), topDp = 12)
+            }
             KEY_WEAPONS -> addText(body, HubFormat.weapons(h.weapons, true))
             else -> addText(body, HubFormat.inventory(h.inventory, true))
         }
@@ -199,22 +230,25 @@ class HubActivity : AppCompatActivity() {
         if (equipped.isEmpty()) {
             addText(body, "Chưa thấy gem đang trang bị — gõ owo hunt 1 lần để bot ghi nhận.", dim = true)
         }
-        for (e in equipped) {
+        for ((i, e) in equipped.withIndex()) {
             val p = e.percent ?: 0
             val warn = if (p <= 15) "  ⚠️ sắp hết" else ""
-            addBarRow(
-                body, "Slot ${e.slot ?: "?"} · ${e.tier ?: "?"}$warn",
-                "${e.current ?: "?"}/${e.max ?: "?"} ($p%)", p, toneColor(HubSummary.gemTone(p)), 10
-            )
+            val icon = iconOf(e.emojiId, e.emojiAnimated, e.emoji, e.tier)
+            val color = toneColor(HubSummary.gemTone(p))
+            addIconTextRow(body, icon, "Slot ${e.slot ?: "?"} · ${e.tier ?: "?"}$warn",
+                "${e.current ?: "?"}/${e.max ?: "?"} ($p%)", ringPercent = p, ringColor = color, topDp = if (i == 0) 0 else 14)
         }
         addText(body, "Dự phòng trong kho", sizeSp = 13f, bold = true, dim = true, topDp = 16)
         val spare = g?.spare.orEmpty()
         if (spare.isEmpty()) {
             addText(body, "(không có, hoặc bot chưa thấy kho)", dim = true, topDp = 2)
         } else {
-            for ((slot, list) in spare.groupBy { it.slot ?: "?" }) {
+            for ((idx, entry) in spare.groupBy { it.slot ?: "?" }.entries.withIndex()) {
+                val (slot, list) = entry
+                val first = list.first()
+                val icon = iconOf(first.emojiId, first.emojiAnimated, first.emoji, first.tier)
                 val line = list.joinToString(" · ") { "${it.tier ?: "?"} ×${HubFormat.num(it.count)}" }
-                addText(body, "Slot $slot: $line", topDp = 4)
+                addIconTextRow(body, icon, "Slot $slot", line, topDp = if (idx == 0) 4 else 8, iconSizeDp = 26)
             }
         }
     }
@@ -224,24 +258,48 @@ class HubActivity : AppCompatActivity() {
         if (items.isEmpty()) {
             val msg = if (q?.allDone == true) "🎉 Đã xong hết quest hôm nay" else "Chưa có chi tiết quest — gõ owo quest để bot ghi nhận."
             addText(body, msg, dim = q?.allDone != true)
+            return
         }
         for ((i, qi) in items.withIndex()) {
             val done = qi.done == true
-            val rarity = if (qi.rarity.isNullOrBlank()) "" else "  (${qi.rarity})"
-            addText(body, "${if (done) "✅" else "•"} ${qi.index ?: "?"}. ${qi.title ?: "?"}$rarity",
-                sizeSp = 16f, bold = true, topDp = if (i == 0) 0 else 14)
-            if (qi.current != null && qi.max != null && qi.max > 0) {
-                val pct = (qi.current * 100 / qi.max).toInt().coerceIn(0, 100)
-                addBarRow(body, "", "${HubFormat.num(qi.current)}/${HubFormat.num(qi.max)} ($pct%)", pct,
-                    toneColor(if (done) Tone.OK else Tone.INFO), 6)
-            }
+            val icon = iconOf(qi.emojiId, qi.emojiAnimated, qi.emoji, qi.title)
+            val pct = if (qi.current != null && qi.max != null && qi.max > 0)
+                (qi.current * 100 / qi.max).toInt().coerceIn(0, 100) else null
+            val progressText = if (pct != null) "${HubFormat.num(qi.current)}/${HubFormat.num(qi.max)} ($pct%)" else null
+            addIconTextRow(body, icon, "${if (done) "✅ " else ""}${qi.index ?: "?"}. ${qi.title ?: "?"}", progressText,
+                ringPercent = pct, ringColor = toneColor(if (done) Tone.OK else Tone.INFO), topDp = if (i == 0) 0 else 18)
             if (!qi.description.isNullOrBlank()) addText(body, qi.description, sizeSp = 13f, dim = true, topDp = 4)
-            val rewards = qi.rewards.orEmpty()
-            if (rewards.isNotEmpty()) {
-                addText(body, "Thưởng: " + rewards.joinToString(" · ") { r -> "${r.item ?: "?"} +${HubFormat.num(r.amount)}" },
-                    sizeSp = 13f, dim = true, topDp = 2)
-            }
+            addRewardsRow(body, qi.rewards.orEmpty(), topDp = 6)
         }
+    }
+
+    private fun fillTeam(body: LinearLayout, t: HubTeam?) {
+        val members = t?.members.orEmpty()
+        if (members.isEmpty()) {
+            addText(body, "Chưa có đội hình — gõ owo team 1 lần để bot ghi nhận.", dim = true)
+            return
+        }
+        for ((i, m) in members.withIndex()) {
+            val icon = iconOf(m.emojiId, m.emojiAnimated, m.emoji, m.name)
+            val stats = "HP${m.hp ?: "?"} WP${m.wp ?: "?"} ATT${m.att ?: "?"} MAG${m.mag ?: "?"}"
+            val sub = if (m.weaponId.isNullOrBlank()) stats else "$stats · ${m.weaponId} ${HubFormat.trimNum(m.quality)}%"
+            addIconTextRow(body, icon, "[${m.pos ?: "?"}] ${m.name ?: "?"} Lv${m.level ?: "?"}", sub,
+                topDp = if (i == 0) 0 else 12)
+        }
+    }
+
+    /** Bieu do cot: so pet dang co theo tung tier (tu dong cuoi bang zoo, xem HubFormat/README). */
+    private fun fillZooChart(parent: LinearLayout, z: com.tuytam.automacro.data.HubZoo?) {
+        val tiers = z?.byTier.orEmpty().filterValues { (it.total ?: 0) > 0 }
+        if (tiers.isEmpty()) return
+        addText(parent, "So sánh theo tier", sizeSp = 13f, bold = true, dim = true)
+        val chart = BarChartView(this)
+        chart.labelColor = binding.tvHubTitle.currentTextColor
+        chart.entries = tiers.entries.sortedByDescending { it.value.total ?: 0L }
+            .map { (name, tier) -> BarEntry(name.replaceFirstChar { c -> c.uppercaseChar() }, tier.total ?: 0L, tierColor(name)) }
+        val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        lp.topMargin = dp(6)
+        parent.addView(chart, lp)
     }
 
     /** Phan phu thuoc thoi gian: 6 o tom tat + chu "X phut truoc" cua tung the. */
@@ -268,7 +326,7 @@ class HubActivity : AppCompatActivity() {
     }
 
     private fun tileOrError(errors: Map<String, String>?, key: String, build: () -> TileState): TileState =
-        if (errors?.containsKey(key) == true) TileState("Lỗi", "Không đọc được", Tone.BAD) else build()
+        if (errors?.containsKey(key) == true) TileState("Lỗi", "Không đọc được", Tone.BAD, IconSpec(unicode = "⚠️")) else build()
 
     private fun setCardAge(key: String, ageSeconds: Long?, elapsedSec: Long) {
         val card = cards.firstOrNull { it.key == key } ?: return
@@ -281,6 +339,10 @@ class HubActivity : AppCompatActivity() {
         tile.tvTileValue.setTextColor(color)
         tile.tvTileSub.text = state.sub
         tile.root.strokeColor = color
+        tile.flTileIconBg.background = circleDrawable(withAlpha(color, 32))
+        tile.rvTileRing.ringColor = color
+        tile.rvTileRing.percent = state.ringPercent ?: 0
+        tile.ivTileIcon.bind(lifecycleScope, state.icon, unicodeSp = 16f, letterSp = 12f)
     }
 
     private fun toneColor(tone: Tone): Int = getColor(
@@ -292,6 +354,22 @@ class HubActivity : AppCompatActivity() {
             Tone.IDLE -> R.color.hub_idle
         }
     )
+
+    /** Mau rieng cho tung tier trong bieu do cot Zoo — chi de phan biet truc quan, khong mang y nghia gi khac. */
+    private fun tierColor(tier: String?): Int {
+        val idx = TIER_ORDER.indexOf(tier?.lowercase(Locale.US))
+        return if (idx in TIER_PALETTE.indices) TIER_PALETTE[idx]
+        else TIER_PALETTE[Math.floorMod(tier?.hashCode() ?: 0, TIER_PALETTE.size)]
+    }
+
+    private fun withAlpha(color: Int, alpha: Int): Int = (color and 0x00FFFFFF) or (alpha.coerceIn(0, 255) shl 24)
+
+    private fun circleDrawable(color: Int): GradientDrawable {
+        val d = GradientDrawable()
+        d.shape = GradientDrawable.OVAL
+        d.setColor(color)
+        return d
+    }
 
     // ------------------------------------------------------------------
     // Ham dung view nho (dung trong noi dung the chi tiet)
@@ -307,7 +385,7 @@ class HubActivity : AppCompatActivity() {
         tv.text = text
         tv.textSize = sizeSp
         tv.setTextColor(binding.tvHubTitle.textColors)
-        if (bold) tv.setTypeface(tv.typeface, Typeface.BOLD)
+        if (bold) tv.setTypeface(tv.typeface, android.graphics.Typeface.BOLD)
         if (dim) tv.alpha = 0.75f
         tv.setLineSpacing(0f, 1.15f)
         val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -316,36 +394,87 @@ class HubActivity : AppCompatActivity() {
         return tv
     }
 
-    /** 1 hang gom chu trai + chu phai, kem 1 thanh tien do tô mau ben duoi. */
-    private fun addBarRow(parent: LinearLayout, left: String, right: String, percent: Int, color: Int, topDp: Int) {
+    /**
+     * 1 hang: [vong tron % (neu co) + icon that o giua] + [tieu de / phu de].
+     * Dung cho gem, quest, doi hinh trong noi dung the mo rong.
+     */
+    private fun addIconTextRow(
+        parent: LinearLayout, icon: IconSpec, title: CharSequence, subtitle: CharSequence? = null,
+        ringPercent: Int? = null, ringColor: Int? = null, topDp: Int = 0, iconSizeDp: Int = 32
+    ) {
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
+        row.gravity = Gravity.CENTER_VERTICAL
 
-        val l = TextView(this)
-        l.text = left
-        l.textSize = 15f
-        l.setTextColor(binding.tvHubTitle.textColors)
-        row.addView(l, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        val frame = FrameLayout(this)
+        if (ringPercent != null && ringColor != null) {
+            val ring = RingView(this)
+            ring.ringColor = ringColor
+            ring.percent = ringPercent
+            ring.strokeWidthDp = 3.5f
+            frame.addView(ring, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+            val inset = dp(5)
+            val iv = IconView(this)
+            iv.bind(lifecycleScope, icon, unicodeSp = 14f, letterSp = 10f)
+            val ivLp = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+            ivLp.setMargins(inset, inset, inset, inset)
+            frame.addView(iv, ivLp)
+        } else {
+            val iv = IconView(this)
+            iv.bind(lifecycleScope, icon, unicodeSp = 16f, letterSp = 12f)
+            frame.addView(iv, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+        }
+        row.addView(frame, LinearLayout.LayoutParams(dp(iconSizeDp), dp(iconSizeDp)))
 
-        val r = TextView(this)
-        r.text = right
-        r.textSize = 15f
-        r.setTypeface(r.typeface, Typeface.BOLD)
-        r.setTextColor(color)
-        row.addView(r, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        val col = LinearLayout(this)
+        col.orientation = LinearLayout.VERTICAL
+        val tvTitle = TextView(this)
+        tvTitle.text = title
+        tvTitle.textSize = 15f
+        tvTitle.setTextColor(binding.tvHubTitle.textColors)
+        col.addView(tvTitle)
+        if (!subtitle.isNullOrEmpty()) {
+            val tvSub = TextView(this)
+            tvSub.text = subtitle
+            tvSub.textSize = 13f
+            tvSub.alpha = 0.75f
+            tvSub.setTextColor(binding.tvHubTitle.textColors)
+            col.addView(tvSub)
+        }
+        val colLp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        colLp.marginStart = dp(10)
+        row.addView(col, colLp)
 
         val rowLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         rowLp.topMargin = dp(topDp)
         parent.addView(row, rowLp)
+    }
 
-        val bar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal)
-        bar.max = 100
-        bar.progress = percent.coerceIn(0, 100)
-        bar.progressTintList = ColorStateList.valueOf(color)
-        bar.progressBackgroundTintList = ColorStateList.valueOf((color and 0x00FFFFFF) or 0x33000000)
-        val barLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(10))
-        barLp.topMargin = dp(4)
-        parent.addView(bar, barLp)
+    /** 1 hang ngang cac phan thuong, moi phan thuong la 1 icon nho + "+so luong". Dung trong the Quest. */
+    private fun addRewardsRow(parent: LinearLayout, rewards: List<HubReward>, topDp: Int) {
+        if (rewards.isEmpty()) return
+        val row = LinearLayout(this)
+        row.orientation = LinearLayout.HORIZONTAL
+        row.gravity = Gravity.CENTER_VERTICAL
+        for ((idx, r) in rewards.withIndex()) {
+            val iv = IconView(this)
+            iv.bind(lifecycleScope, iconOf(r.emojiId, r.emojiAnimated, r.emoji, r.item), unicodeSp = 13f, letterSp = 10f)
+            val ivLp = LinearLayout.LayoutParams(dp(18), dp(18))
+            if (idx > 0) ivLp.marginStart = dp(12)
+            row.addView(iv, ivLp)
+
+            val tv = TextView(this)
+            tv.text = "+${HubFormat.num(r.amount)}"
+            tv.textSize = 13f
+            tv.alpha = 0.85f
+            tv.setTextColor(binding.tvHubTitle.textColors)
+            val tvLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            tvLp.marginStart = dp(4)
+            row.addView(tv, tvLp)
+        }
+        val rowLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        rowLp.topMargin = dp(topDp)
+        parent.addView(row, rowLp)
     }
 
     companion object {
@@ -358,5 +487,15 @@ class HubActivity : AppCompatActivity() {
         private const val KEY_ZOO = "zoo"
         private const val KEY_WEAPONS = "weapons"
         private const val KEY_INVENTORY = "inventory"
+
+        private val TIER_ORDER = listOf(
+            "common", "uncommon", "rare", "epic", "mythic", "legendary",
+            "gem", "patreon", "special", "botrank", "cpatreon", "fabled"
+        )
+        private val TIER_PALETTE = intArrayOf(
+            0xFF8D8D99.toInt(), 0xFF4CAF7D.toInt(), 0xFF3FA7D6.toInt(), 0xFFB064E8.toInt(),
+            0xFFE85D9E.toInt(), 0xFFE8B84B.toInt(), 0xFF29C7C7.toInt(), 0xFFEF6C57.toInt(),
+            0xFF9575CD.toInt(), 0xFF78909C.toInt(), 0xFFD4AF37.toInt(), 0xFF546E7A.toInt()
+        )
     }
 }

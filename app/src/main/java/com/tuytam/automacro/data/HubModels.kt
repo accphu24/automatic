@@ -31,11 +31,17 @@ data class HubDaily(
     @SerializedName("last_reward") val lastReward: Long? = null,
     @SerializedName("ready_at") val readyAt: String? = null,
     @SerializedName("seconds_left") val secondsLeft: Long? = null,
+    @SerializedName("emoji_id") val emojiId: String? = null,
+    @SerializedName("emoji_animated") val emojiAnimated: Boolean? = null,
+    val emoji: String? = null,
     @SerializedName("age_seconds") val ageSeconds: Long? = null
 )
 
 data class HubCowoncy(
     val amount: Long? = null,
+    @SerializedName("emoji_id") val emojiId: String? = null,
+    @SerializedName("emoji_animated") val emojiAnimated: Boolean? = null,
+    val emoji: String? = null,
     @SerializedName("age_seconds") val ageSeconds: Long? = null
 )
 
@@ -51,6 +57,9 @@ data class HubGemEquipped(
     val current: Long? = null,
     val max: Long? = null,
     val percent: Int? = null,
+    @SerializedName("emoji_id") val emojiId: String? = null,
+    @SerializedName("emoji_animated") val emojiAnimated: Boolean? = null,
+    val emoji: String? = null,
     @SerializedName("age_seconds") val ageSeconds: Long? = null
 )
 
@@ -58,7 +67,10 @@ data class HubGemSpare(
     val code: String? = null,
     val slot: String? = null,
     val tier: String? = null,
-    val count: Long? = null
+    val count: Long? = null,
+    @SerializedName("emoji_id") val emojiId: String? = null,
+    @SerializedName("emoji_animated") val emojiAnimated: Boolean? = null,
+    val emoji: String? = null,
 )
 
 // ---- HuntBot ----
@@ -91,12 +103,18 @@ data class HubQuestItem(
     val rewards: List<HubReward>? = null,
     val current: Long? = null,
     val max: Long? = null,
-    val done: Boolean? = null
+    val done: Boolean? = null,
+    @SerializedName("emoji_id") val emojiId: String? = null,
+    @SerializedName("emoji_animated") val emojiAnimated: Boolean? = null,
+    val emoji: String? = null,
 )
 
 data class HubReward(
     val item: String? = null,
-    val amount: Long? = null
+    val amount: Long? = null,
+    @SerializedName("emoji_id") val emojiId: String? = null,
+    @SerializedName("emoji_animated") val emojiAnimated: Boolean? = null,
+    val emoji: String? = null,
 )
 
 // ---- Doi hinh ----
@@ -116,7 +134,10 @@ data class HubTeamMember(
     val pr: Long? = null,
     val mr: Long? = null,
     val weaponId: String? = null,
-    val quality: Double? = null
+    val quality: Double? = null,
+    @SerializedName("emoji_id") val emojiId: String? = null,
+    @SerializedName("emoji_animated") val emojiAnimated: Boolean? = null,
+    val emoji: String? = null,
 )
 
 // ---- Zoo (pet dang co) ----
@@ -131,13 +152,19 @@ data class HubZoo(
 
 data class HubTier(
     val species: Int? = null,
-    val total: Long? = null
+    val total: Long? = null,
+    @SerializedName("emoji_id") val emojiId: String? = null,
+    @SerializedName("emoji_animated") val emojiAnimated: Boolean? = null,
+    val emoji: String? = null,
 )
 
 data class HubPet(
     val tier: String? = null,
     val name: String? = null,
-    val count: Long? = null
+    val count: Long? = null,
+    @SerializedName("emoji_id") val emojiId: String? = null,
+    @SerializedName("emoji_animated") val emojiAnimated: Boolean? = null,
+    val emoji: String? = null,
 )
 
 // ---- Kho do ----

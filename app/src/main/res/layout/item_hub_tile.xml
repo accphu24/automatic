@@ -6,32 +6,60 @@
     android:layout_height="wrap_content"
     android:layout_margin="5dp"
     android:layout_weight="1"
-    app:cardCornerRadius="14dp"
+    app:cardCornerRadius="16dp"
     app:cardElevation="0dp"
     app:strokeColor="@color/hub_idle"
     app:strokeWidth="2dp">
 
     <LinearLayout
+        android:id="@+id/llTileContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="96dp"
+        android:minHeight="108dp"
         android:orientation="vertical"
         android:padding="12dp">
 
-        <TextView
-            android:id="@+id/tvTileLabel"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:alpha="0.75"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            tools:text="⏰ Daily" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <FrameLayout
+                android:id="@+id/flTileIconBg"
+                android:layout_width="38dp"
+                android:layout_height="38dp">
+
+                <com.tuytam.automacro.view.RingView
+                    android:id="@+id/rvTileRing"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+                <com.tuytam.automacro.view.IconView
+                    android:id="@+id/ivTileIcon"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_margin="6dp" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/tvTileLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:alpha="0.75"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                tools:text="Daily" />
+
+        </LinearLayout>
 
         <TextView
             android:id="@+id/tvTileValue"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="6dp"
             android:autoSizeMaxTextSize="26sp"
             android:autoSizeMinTextSize="15sp"
             android:autoSizeStepGranularity="1sp"
@@ -44,7 +72,7 @@
             android:id="@+id/tvTileSub"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="2dp"
             android:alpha="0.75"
             android:maxLines="2"
             android:textSize="13sp"
