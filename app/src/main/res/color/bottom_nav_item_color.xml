@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mau icon + chu cua thanh 3 tab duoi cung: dam khi dang chon, mo nhat khi khong. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="?attr/colorPrimary" android:state_checked="true" />
+    <item android:color="#8A000000" android:state_checked="false" android:alpha="1" />
+</selector>

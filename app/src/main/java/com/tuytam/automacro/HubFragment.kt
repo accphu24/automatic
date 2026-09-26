@@ -4,12 +4,13 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.tuytam.automacro.data.HubFormat
 import com.tuytam.automacro.data.HubGems
@@ -19,6 +20,7 @@ import com.tuytam.automacro.data.HubResponse
 import com.tuytam.automacro.data.HubResult
 import com.tuytam.automacro.data.HubSummary
 import com.tuytam.automacro.data.HubTeam
+import com.tuytam.automacro.data.HubZoo
 import com.tuytam.automacro.data.IconSpec
 import com.tuytam.automacro.data.LineState
 import com.tuytam.automacro.data.OwoTrackerApi
@@ -32,7 +34,7 @@ import com.tuytam.automacro.data.questTileIcon
 import com.tuytam.automacro.data.teamCardIcon
 import com.tuytam.automacro.data.weaponsCardIcon
 import com.tuytam.automacro.data.zooTileIcon
-import com.tuytam.automacro.databinding.ActivityHubBinding
+import com.tuytam.automacro.databinding.FragmentHubBinding
 import com.tuytam.automacro.databinding.ItemHubCardBinding
 import com.tuytam.automacro.databinding.ItemHubTileBinding
 import com.tuytam.automacro.view.BarChartView
@@ -48,7 +50,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Man hinh Hub. Bo cuc:
+ * Tab "OwO Hub". Bo cuc:
  *  - 6 O TOM TAT o tren cung (Daily, HuntBot, Cowoncy, Quest, Gem, Pet): moi o co 1 vong
  *    tron % (khi co y nghia) + 1 icon THAT (anh emoji cua Discord, hoac Unicode, hoac
  *    chu cai dau) + 1 so to + mau trang thai (xanh la = xong/san sang, xanh duong = dang
@@ -56,11 +58,14 @@ import java.util.Locale
  *  - THE CHI TIET ben duoi: moi the 1 mau rieng + icon rieng o tieu de, luon hien 1 dong
  *    tom tat, cham vao de mo/dong noi dung day du. Gem/Quest dung vong tron % + icon that
  *    cho tung dong; Zoo co them bieu do cot so sanh so pet theo tier khi mo rong.
- *  - Tu lay lai du lieu moi 30 giay; moi giay chi cap nhat dong ho dem nguoc + "X phut truoc".
+ *  - Tu lay lai du lieu moi 30 giay CHI KHI dang o tab nay (gan voi viewLifecycleOwner nen
+ *    tu dung khi chuyen sang tab khac); moi giay chi cap nhat dong ho dem nguoc + "X phut truoc".
  */
-class HubActivity : AppCompatActivity() {
+class HubFragment : Fragment() {
 
-    private lateinit var binding: ActivityHubBinding
+    private var _binding: FragmentHubBinding? = null
+    private val binding get() = _binding!!
+
     private lateinit var cards: List<Card>
 
     private var hub: HubResponse? = null
@@ -72,10 +77,13 @@ class HubActivity : AppCompatActivity() {
 
     private class Card(val key: String, val ui: ItemHubCardBinding, val accentColor: Int)
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityHubBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        _binding = FragmentHubBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         binding.tileDaily.tvTileLabel.setText(R.string.hub_tile_daily)
         binding.tileHuntbot.tvTileLabel.setText(R.string.hub_tile_huntbot)
@@ -101,16 +109,16 @@ class HubActivity : AppCompatActivity() {
         }
 
         binding.btnHubRefresh.setOnClickListener {
-            lifecycleScope.launch { loadHub() }
+            viewLifecycleOwner.lifecycleScope.launch { loadHub() }
         }
     }
 
     private fun setupCard(key: String, ui: ItemHubCardBinding, titleRes: Int, accentRes: Int): Card {
-        val accentColor = getColor(accentRes)
+        val accentColor = requireContext().getColor(accentRes)
         ui.tvCardTitle.setText(titleRes)
         ui.vAccent.setBackgroundColor(accentColor)
         ui.flCardIconBg.background = circleDrawable(withAlpha(accentColor, 40))
-        ui.ivCardIcon.bind(lifecycleScope, IconSpec(unicode = "•"))
+        ui.ivCardIcon.bind(viewLifecycleOwner.lifecycleScope, IconSpec(unicode = "•"))
         ui.tvCardSummary.text = ""
         ui.tvCardArrow.text = if (key in expanded) ARROW_OPEN else ARROW_CLOSED
         ui.root.setOnClickListener {
@@ -122,15 +130,15 @@ class HubActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Lay du lieu ngay, roi cu 30 giay lay lai 1 lan
-        fetchJob = lifecycleScope.launch {
+        // Lay du lieu ngay, roi cu 30 giay lay lai 1 lan — chi trong luc tab nay dang hien
+        fetchJob = viewLifecycleOwner.lifecycleScope.launch {
             while (isActive) {
                 loadHub()
                 delay(REFRESH_INTERVAL_MS)
             }
         }
         // Moi giay cap nhat dong ho dem nguoc + "X phut truoc" (khong goi mang)
-        tickJob = lifecycleScope.launch {
+        tickJob = viewLifecycleOwner.lifecycleScope.launch {
             while (isActive) {
                 renderTimed()
                 delay(1000L)
@@ -144,8 +152,13 @@ class HubActivity : AppCompatActivity() {
         tickJob?.cancel()
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
     private suspend fun loadHub() {
-        val settings = OwoTrackerPrefs.load(this)
+        val settings = OwoTrackerPrefs.load(requireContext())
         if (settings.apiUrl.isBlank() || settings.token.isBlank()) {
             binding.tvHubStatus.text = getString(R.string.hub_need_settings)
             return
@@ -181,7 +194,7 @@ class HubActivity : AppCompatActivity() {
             val ui = card.ui
             ui.tvCardSummary.text = line.text
             ui.tvCardSummary.setTextColor(toneColor(line.tone))
-            ui.ivCardIcon.bind(lifecycleScope, if (error != null) IconSpec(unicode = "⚠️") else cardIconFor(card.key, h))
+            ui.ivCardIcon.bind(viewLifecycleOwner.lifecycleScope, if (error != null) IconSpec(unicode = "⚠️") else cardIconFor(card.key, h))
 
             val open = card.key in expanded
             ui.tvCardArrow.text = if (open) ARROW_OPEN else ARROW_CLOSED
@@ -289,12 +302,12 @@ class HubActivity : AppCompatActivity() {
     }
 
     /** Bieu do cot: so pet dang co theo tung tier (tu dong cuoi bang zoo, xem HubFormat/README). */
-    private fun fillZooChart(parent: LinearLayout, z: com.tuytam.automacro.data.HubZoo?) {
+    private fun fillZooChart(parent: LinearLayout, z: HubZoo?) {
         val tiers = z?.byTier.orEmpty().filterValues { (it.total ?: 0) > 0 }
         if (tiers.isEmpty()) return
         addText(parent, "So sánh theo tier", sizeSp = 13f, bold = true, dim = true)
-        val chart = BarChartView(this)
-        chart.labelColor = binding.tvHubTitle.currentTextColor
+        val chart = BarChartView(requireContext())
+        chart.labelColor = binding.tvHubStatus.currentTextColor
         chart.entries = tiers.entries.sortedByDescending { it.value.total ?: 0L }
             .map { (name, tier) -> BarEntry(name.replaceFirstChar { c -> c.uppercaseChar() }, tier.total ?: 0L, tierColor(name)) }
         val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -342,10 +355,10 @@ class HubActivity : AppCompatActivity() {
         tile.flTileIconBg.background = circleDrawable(withAlpha(color, 32))
         tile.rvTileRing.ringColor = color
         tile.rvTileRing.percent = state.ringPercent ?: 0
-        tile.ivTileIcon.bind(lifecycleScope, state.icon, unicodeSp = 16f, letterSp = 12f)
+        tile.ivTileIcon.bind(viewLifecycleOwner.lifecycleScope, state.icon, unicodeSp = 16f, letterSp = 12f)
     }
 
-    private fun toneColor(tone: Tone): Int = getColor(
+    private fun toneColor(tone: Tone): Int = requireContext().getColor(
         when (tone) {
             Tone.OK -> R.color.hub_ok
             Tone.INFO -> R.color.hub_info
@@ -381,10 +394,10 @@ class HubActivity : AppCompatActivity() {
         parent: LinearLayout, text: CharSequence, sizeSp: Float = 15f,
         bold: Boolean = false, dim: Boolean = false, topDp: Int = 0
     ): TextView {
-        val tv = TextView(this)
+        val tv = TextView(requireContext())
         tv.text = text
         tv.textSize = sizeSp
-        tv.setTextColor(binding.tvHubTitle.textColors)
+        tv.setTextColor(binding.tvHubStatus.textColors)
         if (bold) tv.setTypeface(tv.typeface, android.graphics.Typeface.BOLD)
         if (dim) tv.alpha = 0.75f
         tv.setLineSpacing(0f, 1.15f)
@@ -402,43 +415,43 @@ class HubActivity : AppCompatActivity() {
         parent: LinearLayout, icon: IconSpec, title: CharSequence, subtitle: CharSequence? = null,
         ringPercent: Int? = null, ringColor: Int? = null, topDp: Int = 0, iconSizeDp: Int = 32
     ) {
-        val row = LinearLayout(this)
+        val row = LinearLayout(requireContext())
         row.orientation = LinearLayout.HORIZONTAL
         row.gravity = Gravity.CENTER_VERTICAL
 
-        val frame = FrameLayout(this)
+        val frame = FrameLayout(requireContext())
         if (ringPercent != null && ringColor != null) {
-            val ring = RingView(this)
+            val ring = RingView(requireContext())
             ring.ringColor = ringColor
             ring.percent = ringPercent
             ring.strokeWidthDp = 3.5f
             frame.addView(ring, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
             val inset = dp(5)
-            val iv = IconView(this)
-            iv.bind(lifecycleScope, icon, unicodeSp = 14f, letterSp = 10f)
+            val iv = IconView(requireContext())
+            iv.bind(viewLifecycleOwner.lifecycleScope, icon, unicodeSp = 14f, letterSp = 10f)
             val ivLp = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
             ivLp.setMargins(inset, inset, inset, inset)
             frame.addView(iv, ivLp)
         } else {
-            val iv = IconView(this)
-            iv.bind(lifecycleScope, icon, unicodeSp = 16f, letterSp = 12f)
+            val iv = IconView(requireContext())
+            iv.bind(viewLifecycleOwner.lifecycleScope, icon, unicodeSp = 16f, letterSp = 12f)
             frame.addView(iv, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
         }
         row.addView(frame, LinearLayout.LayoutParams(dp(iconSizeDp), dp(iconSizeDp)))
 
-        val col = LinearLayout(this)
+        val col = LinearLayout(requireContext())
         col.orientation = LinearLayout.VERTICAL
-        val tvTitle = TextView(this)
+        val tvTitle = TextView(requireContext())
         tvTitle.text = title
         tvTitle.textSize = 15f
-        tvTitle.setTextColor(binding.tvHubTitle.textColors)
+        tvTitle.setTextColor(binding.tvHubStatus.textColors)
         col.addView(tvTitle)
         if (!subtitle.isNullOrEmpty()) {
-            val tvSub = TextView(this)
+            val tvSub = TextView(requireContext())
             tvSub.text = subtitle
             tvSub.textSize = 13f
             tvSub.alpha = 0.75f
-            tvSub.setTextColor(binding.tvHubTitle.textColors)
+            tvSub.setTextColor(binding.tvHubStatus.textColors)
             col.addView(tvSub)
         }
         val colLp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
@@ -453,21 +466,21 @@ class HubActivity : AppCompatActivity() {
     /** 1 hang ngang cac phan thuong, moi phan thuong la 1 icon nho + "+so luong". Dung trong the Quest. */
     private fun addRewardsRow(parent: LinearLayout, rewards: List<HubReward>, topDp: Int) {
         if (rewards.isEmpty()) return
-        val row = LinearLayout(this)
+        val row = LinearLayout(requireContext())
         row.orientation = LinearLayout.HORIZONTAL
         row.gravity = Gravity.CENTER_VERTICAL
         for ((idx, r) in rewards.withIndex()) {
-            val iv = IconView(this)
-            iv.bind(lifecycleScope, iconOf(r.emojiId, r.emojiAnimated, r.emoji, r.item), unicodeSp = 13f, letterSp = 10f)
+            val iv = IconView(requireContext())
+            iv.bind(viewLifecycleOwner.lifecycleScope, iconOf(r.emojiId, r.emojiAnimated, r.emoji, r.item), unicodeSp = 13f, letterSp = 10f)
             val ivLp = LinearLayout.LayoutParams(dp(18), dp(18))
             if (idx > 0) ivLp.marginStart = dp(12)
             row.addView(iv, ivLp)
 
-            val tv = TextView(this)
+            val tv = TextView(requireContext())
             tv.text = "+${HubFormat.num(r.amount)}"
             tv.textSize = 13f
             tv.alpha = 0.85f
-            tv.setTextColor(binding.tvHubTitle.textColors)
+            tv.setTextColor(binding.tvHubStatus.textColors)
             val tvLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             tvLp.marginStart = dp(4)
             row.addView(tv, tvLp)

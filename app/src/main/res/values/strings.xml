@@ -80,8 +80,6 @@
     <string name="on_fail_note_prefix">nếu lỗi</string>
 
     <!-- Man hinh Hub -->
-    <string name="btn_open_hub">🧭 Mở Hub OwO</string>
-    <string name="hub_title">🧭 Hub OwO</string>
     <string name="hub_refresh">Làm mới</string>
     <string name="hub_loading">Đang lấy dữ liệu từ bot…</string>
     <string name="hub_need_settings">Chưa cài kết nối — vào ⚙️ Kết nối owo-tracker, điền địa chỉ API và token trước.</string>
@@ -102,4 +100,8 @@
     <string name="hub_section_zoo">🐾 Pet (Zoo)</string>
     <string name="hub_section_weapons">🗡️ Vũ khí</string>
     <string name="hub_section_inventory">🎒 Kho đồ</string>
+    <!-- 3 tab duoi cung -->
+    <string name="tab_hub">OwO Hub</string>
+    <string name="tab_settings">Cài đặt</string>
+    <string name="tab_automatic">Tự động</string>
 </resources>

@@ -39,7 +39,7 @@ dien thoai). Xem muc "Ket noi voi owo-tracker" ben duoi.
   bao done/failed. Don gian hoa tu ban dau (bo phan tao kich ban rieng + khop ten,
   vi Ruby thay qua phuc tap) - gio KHONG can Room/kich ban cho phan nay nua.
 
-- Man hinh HUB (nut "Mo Hub OwO" o man hinh chinh -> HubActivity): hien du lieu moi
+- Man hinh HUB (tab "OwO Hub" -> HubFragment, xem phan "3 TAB" ben duoi): hien du lieu moi
   nhat owo-tracker da doc duoc tu tin nhan OwO (HuntBot co dong ho dem nguoc, gem dang
   dung + gem du phong, quest, doi hinh, tran dau, pet/zoo, vu khi, kho do). Goi
   GET /hub (cung token voi /commands/pending), tu lam moi moi 30 giay khi dang mo, moi
@@ -56,6 +56,21 @@ dien thoai). Xem muc "Ket noi voi owo-tracker" ben duoi.
   Co them the Daily (dem nguoc gio nhan + streak), Cowoncy, va Quest (dem nguoc quest ke tiep
   + tung quest: ten, tien do, mo ta, thuong).
   Khong con doc/hien battle (Ruby khong can) - owo-tracker cung da bo phan doc battle.
+## 3 TAB (BottomNavigationView) - thay doi cau truc man hinh chinh
+MainActivity gio CHI la khung chua, dieu khien 3 tab qua supportFragmentManager.replace():
+  1. navHub       -> HubFragment       (xem GIAO DIEN v2 ben duoi)
+  2. navSettings  -> SettingsFragment  (quyen Accessibility + form ket noi owo-tracker, KHONG
+                                        con la dialog popup - nam thang trong tab, co nut Luu rieng)
+  3. navAutomatic -> AutomaticFragment (danh sach kich ban AutoMacro - chuc nang goc cua app)
+Moi lan doi tab la 1 lenh replace() -> Fragment cu bi huy hoan toan, Fragment moi tao lai tu dau.
+Vi vay Hub CHI polling du lieu (30s/lan) khi dang o tab do (gan voi viewLifecycleOwner.lifecycleScope,
+khong phai lifecycleScope cua Activity nua). File lien quan: res/layout/activity_main.xml (goc, chi co
+FrameLayout fragmentContainer + BottomNavigationView), res/layout/fragment_hub.xml, fragment_settings.xml,
+fragment_automatic.xml, res/menu/bottom_nav_menu.xml, res/color/bottom_nav_item_color.xml,
+res/drawable/ic_tab_hub.xml + ic_tab_settings.xml + ic_tab_automatic.xml.
+DA XOA (khong con dung, XOA TAY tren may): HubActivity.kt, res/layout/activity_hub.xml,
+res/layout/dialog_owo_tracker_settings.xml, khai bao <activity HubActivity> trong AndroidManifest.xml.
+
   GIAO DIEN v2 (icon that + bieu do): moi pet/gem/tier/thanh vien doi hinh/phan thuong quest
   co the mang emoji_id/emoji_animated (ID that cua Discord, xem view/EmojiImageLoader.kt tai
   qua CDN https://cdn.discordapp.com/emojis/<id>.png) hoac emoji (ky tu Unicode co san, cho
@@ -103,8 +118,13 @@ dien thoai). Xem muc "Ket noi voi owo-tracker" ben duoi.
 
 ## Cau truc thu muc chinh
 app/src/main/java/com/tuytam/automacro/
-  MainActivity.kt                         - danh sach kich ban, nut chay mau, ghi, cai dat
-  HubActivity.kt                          - man hinh Hub (xem du lieu OwO tu owo-tracker)
+  MainActivity.kt                         - CHI dieu khien 3 tab duoi (BottomNavigationView),
+                                              khong con chua logic gi khac. Mac dinh mo tab Hub.
+  HubFragment.kt                          - tab "OwO Hub" (truoc la HubActivity, gio la Fragment)
+  SettingsFragment.kt                     - tab "Cai dat": quyen Accessibility + ket noi owo-tracker
+                                              (truoc la dialog_owo_tracker_settings, gio nam thang trong tab)
+  AutomaticFragment.kt                    - tab "Tu dong": danh sach kich ban AutoMacro (chuc nang goc,
+                                              truoc nam thang trong MainActivity.kt)
   ScriptEditorActivity.kt                  - tao/sua kich ban, nap buoc tu ban ghi
   ScriptListAdapter.kt                     - hien danh sach kich ban da luu
   service/AutoAccessibilityService.kt      - chay kich ban + che do ghi + bong bong + dong bo

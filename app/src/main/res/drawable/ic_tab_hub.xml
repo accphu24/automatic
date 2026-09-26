@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 4 o vuong (dashboard/hub) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorControlNormal">
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M3,3 h8 v8 h-8 z M13,3 h8 v8 h-8 z M3,13 h8 v8 h-8 z M13,13 h8 v8 h-8 z" />
+</vector>
