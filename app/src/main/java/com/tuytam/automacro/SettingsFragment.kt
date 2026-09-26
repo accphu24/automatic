@@ -95,6 +95,9 @@ class SettingsFragment : Fragment() {
         binding.tvServiceStatus.text = getString(
             if (enabled) R.string.status_service_enabled else R.string.status_service_disabled
         )
+        binding.tvServiceStatus.setTextColor(
+            requireContext().getColor(if (enabled) R.color.hub_ok else R.color.hub_bad)
+        )
     }
 
     private fun isAccessibilityServiceEnabled(): Boolean {

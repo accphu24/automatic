@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Mau thuong hieu chung ca app (dung trong themes.xml + cac man hinh) -->
+    <color name="brand_violet">#6C5CE7</color>
+    <color name="brand_violet_dark">#4A3FCC</color>
+    <color name="brand_amber">#F5A623</color>
+    <color name="surface_card_light">#F7F5FE</color>
+
     <!-- Mau trang thai cua man hinh Hub (nen sang). Ban toi o values-night/colors.xml -->
     <color name="hub_ok">#2E7D32</color>
     <color name="hub_info">#1565C0</color>

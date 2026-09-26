@@ -71,6 +71,20 @@ res/drawable/ic_tab_hub.xml + ic_tab_settings.xml + ic_tab_automatic.xml.
 DA XOA (khong con dung, XOA TAY tren may): HubActivity.kt, res/layout/activity_hub.xml,
 res/layout/dialog_owo_tracker_settings.xml, khai bao <activity HubActivity> trong AndroidManifest.xml.
 
+## THIET KE (thong nhat ca 3 tab, lam qua /ui-designer)
+He mau: brand_violet (#6C5CE7, mau chinh) + brand_amber (#F5A623, DUY NHAT 1 diem nhan - dung
+cho nut quan trong nhat moi man hinh: Ghi kich ban / Luu cai dat) + surface_card_light (nen the).
+Dinh nghia o colors.xml + values-night (co ban toi rieng). ShapeAppearance trong themes.xml lam
+MOI nut/the trong app tu dong bo goc 12-14dp, khong can khai bao tung noi. styles.xml co san:
+Widget.AutoMacro.Card (the vien mau, KHONG do bong - dung cho item_script + 2 khoi trong Cai dat),
+Widget.AutoMacro.Button/.Tonal/.Outlined, Widget.AutoMacro.TextInputLayout, TextAppearance.AutoMacro.SectionTitle.
+Nen gradient dung chung ca 3 tab: drawable/bg_app_root.xml (doi ten tu bg_hub_root).
+Chu so to trong Hub (tvTileValue) dung sans-serif-black ("so lieu la nhan vat chinh").
+item_script.xml: the co vach mau ben trai + 2 nut icon tron (bg_icon_button_tonal.xml).
+fragment_automatic.xml: co dong trang thai rong (tvEmptyScripts, AutomaticFragment.kt tu bat/tat).
+fragment_settings.xml: 2 khoi the rieng (Quyen truy cap / Ket noi owo-tracker), o nhap dang
+TextInputLayout bo goc, trang thai quyen doi mau theo bat/tat (SettingsFragment.kt).
+
   GIAO DIEN v2 (icon that + bieu do): moi pet/gem/tier/thanh vien doi hinh/phan thuong quest
   co the mang emoji_id/emoji_animated (ID that cua Discord, xem view/EmojiImageLoader.kt tai
   qua CDN https://cdn.discordapp.com/emojis/<id>.png) hoac emoji (ky tu Unicode co san, cho

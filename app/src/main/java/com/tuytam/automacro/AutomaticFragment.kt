@@ -50,6 +50,7 @@ class AutomaticFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             repository.observeScripts().collect { list ->
                 adapter.submitList(list)
+                binding.tvEmptyScripts.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
             }
         }
 

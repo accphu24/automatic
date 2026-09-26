@@ -6,6 +6,9 @@
     <string name="btn_record_script">🔴 Ghi kịch bản mới (record)</string>
     <string name="btn_owo_tracker_settings">⚙️ Kết nối owo-tracker</string>
     <string name="title_owo_tracker_settings">Kết nối owo-tracker</string>
+    <string name="section_accessibility">Quyền truy cập</string>
+    <string name="label_saved_scripts">Kịch bản đã lưu</string>
+    <string name="empty_scripts">Chưa có kịch bản nào.\nBấm \"Ghi kịch bản mới\" hoặc + để tạo kịch bản đầu tiên.</string>
     <string name="label_owo_api_url">Địa chỉ API (URL public trên Railway)</string>
     <string name="label_owo_api_token">Token (giống AUTOMACRO_API_TOKEN đã đặt)</string>
     <string name="label_owo_sync_enabled">Bật tự động kiểm tra lệnh mới (mỗi 15 giây)</string>
@@ -20,8 +23,8 @@
     <string name="toast_recording_started">Đang ghi... Mở app cần tự động hóa và thao tác bình thường. Bấm vào chấm đỏ nổi trên màn hình khi xong để dừng.</string>
     <string name="toast_recording_empty">Không ghi được bước nào — thử mở app và bấm nút chậm hơn 1 chút, hoặc app đó có thể không hỗ trợ Accessibility đầy đủ.</string>
     <string name="toast_service_not_enabled">Chưa bật quyền Accessibility</string>
-    <string name="status_service_enabled">Trạng thái quyền: Đã bật</string>
-    <string name="status_service_disabled">Trạng thái quyền: Chưa bật</string>
+    <string name="status_service_enabled">✅ Quyền Accessibility đã bật</string>
+    <string name="status_service_disabled">⚠️ Chưa bật quyền Accessibility — cần bật để chạy kịch bản</string>
 
     <!-- Man hinh tao kich ban -->
     <string name="title_script_editor">Tạo kịch bản mới</string>

@@ -64,8 +64,8 @@
             android:autoSizeMinTextSize="15sp"
             android:autoSizeStepGranularity="1sp"
             android:autoSizeTextType="uniform"
+            android:fontFamily="sans-serif-black"
             android:maxLines="1"
-            android:textStyle="bold"
             tools:text="3g 11p" />
 
         <TextView

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cac kieu dung chung, de moi man hinh (Hub / Cai dat / Tu dong) nhin dong bo
+     nhau: cung 1 kieu the (vien mau, khong do bong) va 1 kieu nut chinh. -->
+<resources>
+
+    <!-- The vien mau, khong do bong — dung cho danh sach kich ban va cac khoi trong Cai dat.
+         Hub tu khai bao rieng (item_hub_tile/item_hub_card) vi can them thuoc tinh strokeColor
+         thay doi duoc theo du lieu, nhung cung 1 ban chat "vien, phang" nhu o day. -->
+    <style name="Widget.AutoMacro.Card" parent="Widget.MaterialComponents.CardView">
+        <item name="cardElevation">0dp</item>
+        <item name="cardCornerRadius">14dp</item>
+        <item name="strokeWidth">1.5dp</item>
+        <item name="strokeColor">#22000000</item>
+        <item name="cardBackgroundColor">@color/surface_card_light</item>
+    </style>
+
+    <!-- Nut chinh: bo goc 14dp dong bo voi the, khong dung kieu vien mac dinh cua Material -->
+    <style name="Widget.AutoMacro.Button" parent="Widget.MaterialComponents.Button">
+        <item name="cornerRadius">14dp</item>
+    </style>
+
+    <!-- Nut but toan (mau nen nhat) — dung cho hanh dong quan trong nhat 1 man hinh, vd Ghi kich ban -->
+    <style name="Widget.AutoMacro.Button.Tonal" parent="Widget.MaterialComponents.Button.UnelevatedButton">
+        <item name="cornerRadius">14dp</item>
+        <item name="backgroundTint">@color/brand_amber</item>
+        <item name="android:textColor">#2A1E00</item>
+    </style>
+
+    <!-- Nut vien (hanh dong phu) -->
+    <style name="Widget.AutoMacro.Button.Outlined" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="cornerRadius">14dp</item>
+        <item name="strokeColor">@color/brand_violet</item>
+        <item name="android:textColor">@color/brand_violet</item>
+    </style>
+
+    <!-- O nhap dang khung bo goc (dung cho form Cai dat) -->
+    <style name="Widget.AutoMacro.TextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxCornerRadiusTopStart">12dp</item>
+        <item name="boxCornerRadiusTopEnd">12dp</item>
+        <item name="boxCornerRadiusBottomStart">12dp</item>
+        <item name="boxCornerRadiusBottomEnd">12dp</item>
+        <item name="boxStrokeColor">@color/brand_violet</item>
+    </style>
+
+    <style name="TextAppearance.AutoMacro.SectionTitle" parent="TextAppearance.MaterialComponents.Headline6">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">19sp</item>
+    </style>
+
+</resources>

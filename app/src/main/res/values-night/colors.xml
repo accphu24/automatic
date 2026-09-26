@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="brand_violet">#8B7FFF</color>
+    <color name="brand_violet_dark">#6C5CE7</color>
+    <color name="brand_amber">#FFC24D</color>
+    <color name="surface_card_light">#211D33</color>
+
     <!-- Ban sang hon cho nen toi de van doc ro -->
     <color name="hub_ok">#66BB6A</color>
     <color name="hub_info">#64B5F6</color>

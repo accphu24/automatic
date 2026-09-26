@@ -1,7 +1,22 @@
 <resources>
     <style name="Theme.AutoMacro" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">#6C63FF</item>
-        <item name="colorPrimaryVariant">#4A42D6</item>
+        <item name="colorPrimary">@color/brand_violet</item>
+        <item name="colorPrimaryVariant">@color/brand_violet_dark</item>
         <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">@color/brand_amber</item>
+        <item name="colorOnSecondary">#2A1E00</item>
+
+        <!-- Bo goc mac dinh cho MOI nut/the trong app (dong bo, khong can khai bao tung noi) -->
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.AutoMacro.Small</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.AutoMacro.Medium</item>
+        <item name="materialButtonStyle">@style/Widget.AutoMacro.Button</item>
+    </style>
+
+    <style name="ShapeAppearance.AutoMacro.Small" parent="ShapeAppearance.MaterialComponents.SmallComponent">
+        <item name="cornerSize">12dp</item>
+    </style>
+
+    <style name="ShapeAppearance.AutoMacro.Medium" parent="ShapeAppearance.MaterialComponents.MediumComponent">
+        <item name="cornerSize">14dp</item>
     </style>
 </resources>
