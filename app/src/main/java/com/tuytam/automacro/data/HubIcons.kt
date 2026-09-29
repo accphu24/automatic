@@ -50,6 +50,12 @@ fun teamCardIcon(t: HubTeam?): IconSpec {
 
 fun weaponsCardIcon(): IconSpec = IconSpec(unicode = "🗡️")
 
+fun petDexCardIcon(d: HubPetDex?): IconSpec {
+    val first = d?.species.orEmpty().firstOrNull { it.owned == true } ?: d?.species.orEmpty().firstOrNull()
+    return if (first != null) iconOf(first.emojiId, first.emojiAnimated, first.emoji, first.name)
+    else IconSpec(unicode = "📖")
+}
+
 fun inventoryCardIcon(): IconSpec = IconSpec(unicode = "🎒")
 
 fun zooTileIcon(z: HubZoo?): IconSpec {

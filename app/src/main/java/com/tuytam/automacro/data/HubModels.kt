@@ -20,8 +20,37 @@ data class HubResponse(
     val zoo: HubZoo? = null,
     val inventory: HubInventory? = null,
     val weapons: HubWeapons? = null,
+    val petDex: HubPetDex? = null,
     /** Muc nao khong doc duoc -> ten muc + ly do (vd "zoo" -> "Expected BEGIN_ARRAY..."). Cac muc con lai van hien binh thuong. */
     val sectionErrors: Map<String, String>? = null
+)
+
+// ---- Pet Dex (owodex): so lieu GOC tung loai, KE CA loai chua co ----
+data class HubPetDex(
+    @SerializedName("total_known") val totalKnown: Int? = null,
+    @SerializedName("total_owned") val totalOwned: Int? = null,
+    val species: List<HubPetDexEntry>? = null,
+    @SerializedName("age_seconds") val ageSeconds: Long? = null
+)
+
+data class HubPetDexEntry(
+    val name: String? = null,
+    val rank: String? = null,
+    @SerializedName("rank_vi") val rankVi: String? = null,
+    val owned: Boolean? = null,
+    @SerializedName("owned_count") val ownedCount: Long? = null,
+    val hp: Long? = null, val att: Long? = null, val pr: Long? = null,
+    val wp: Long? = null, val mag: Long? = null, val mr: Long? = null,
+    @SerializedName("flavor_text") val flavorText: String? = null,
+    @SerializedName("rarity_caught") val rarityCaught: String? = null,
+    val points: Long? = null,
+    @SerializedName("sell_cowoncy") val sellCowoncy: Long? = null,
+    @SerializedName("sell_sold_count") val sellSoldCount: Long? = null,
+    @SerializedName("sacrifice_essence") val sacrificeEssence: Long? = null,
+    @SerializedName("sacrifice_killed_count") val sacrificeKilledCount: Long? = null,
+    @SerializedName("emoji_id") val emojiId: String? = null,
+    @SerializedName("emoji_animated") val emojiAnimated: Boolean? = null,
+    val emoji: String? = null,
 )
 
 // ---- Daily + Cowoncy ----

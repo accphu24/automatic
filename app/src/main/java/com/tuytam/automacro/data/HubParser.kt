@@ -41,6 +41,7 @@ object HubParser {
             zoo = section("zoo", HubZoo::class.java),
             inventory = section("inventory", HubInventory::class.java),
             weapons = section("weapons", HubWeapons::class.java),
+            petDex = section("pet_dex", HubPetDex::class.java),
             sectionErrors = if (errors.isEmpty()) null else errors
         )
     }

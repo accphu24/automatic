@@ -115,6 +115,10 @@
                 android:id="@+id/cardInventory"
                 layout="@layout/item_hub_card" />
 
+            <include
+                android:id="@+id/cardPetDex"
+                layout="@layout/item_hub_card" />
+
         </LinearLayout>
     </ScrollView>
 

@@ -103,6 +103,7 @@
     <string name="hub_section_zoo">🐾 Pet (Zoo)</string>
     <string name="hub_section_weapons">🗡️ Vũ khí</string>
     <string name="hub_section_inventory">🎒 Kho đồ</string>
+    <string name="hub_section_pet_dex">📖 Pet Dex</string>
     <!-- 3 tab duoi cung -->
     <string name="tab_hub">OwO Hub</string>
     <string name="tab_settings">Cài đặt</string>

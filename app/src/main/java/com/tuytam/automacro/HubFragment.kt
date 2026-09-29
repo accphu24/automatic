@@ -30,6 +30,7 @@ import com.tuytam.automacro.data.Tone
 import com.tuytam.automacro.data.gemsTileIcon
 import com.tuytam.automacro.data.iconOf
 import com.tuytam.automacro.data.inventoryCardIcon
+import com.tuytam.automacro.data.petDexCardIcon
 import com.tuytam.automacro.data.questTileIcon
 import com.tuytam.automacro.data.teamCardIcon
 import com.tuytam.automacro.data.weaponsCardIcon
@@ -98,7 +99,8 @@ class HubFragment : Fragment() {
             setupCard(KEY_TEAM, binding.cardTeam, R.string.hub_section_team, R.color.hub_accent_team),
             setupCard(KEY_ZOO, binding.cardZoo, R.string.hub_section_zoo, R.color.hub_accent_zoo),
             setupCard(KEY_WEAPONS, binding.cardWeapons, R.string.hub_section_weapons, R.color.hub_accent_weapons),
-            setupCard(KEY_INVENTORY, binding.cardInventory, R.string.hub_section_inventory, R.color.hub_accent_inventory)
+            setupCard(KEY_INVENTORY, binding.cardInventory, R.string.hub_section_inventory, R.color.hub_accent_inventory),
+            setupCard(KEY_PET_DEX, binding.cardPetDex, R.string.hub_section_pet_dex, R.color.hub_accent_pet_dex)
         )
 
         // Truoc khi co du lieu: cac o hien dau "…" thay vi de trong
@@ -212,7 +214,8 @@ class HubFragment : Fragment() {
         KEY_TEAM -> HubSummary.teamLine(h.team)
         KEY_ZOO -> HubSummary.zooLine(h.zoo)
         KEY_WEAPONS -> HubSummary.weaponsLine(h.weapons)
-        else -> HubSummary.inventoryLine(h.inventory)
+        KEY_INVENTORY -> HubSummary.inventoryLine(h.inventory)
+        else -> HubSummary.petDexLine(h.petDex)
     }
 
     private fun cardIconFor(key: String, h: HubResponse): IconSpec = when (key) {
@@ -221,7 +224,8 @@ class HubFragment : Fragment() {
         KEY_TEAM -> teamCardIcon(h.team)
         KEY_ZOO -> zooTileIcon(h.zoo)
         KEY_WEAPONS -> weaponsCardIcon()
-        else -> inventoryCardIcon()
+        KEY_INVENTORY -> inventoryCardIcon()
+        else -> petDexCardIcon(h.petDex)
     }
 
     private fun fillBody(key: String, h: HubResponse, body: LinearLayout) {
@@ -234,7 +238,28 @@ class HubFragment : Fragment() {
                 addText(body, HubFormat.zoo(h.zoo, true), topDp = 12)
             }
             KEY_WEAPONS -> addText(body, HubFormat.weapons(h.weapons, true))
-            else -> addText(body, HubFormat.inventory(h.inventory, true))
+            KEY_INVENTORY -> addText(body, HubFormat.inventory(h.inventory, true))
+            else -> fillPetDex(body, h.petDex)
+        }
+    }
+
+    private fun fillPetDex(body: LinearLayout, d: com.tuytam.automacro.data.HubPetDex?) {
+        val list = d?.species.orEmpty()
+        if (list.isEmpty()) {
+            addText(body, "Chưa tra loài pet nào — gõ owo dex <tên> (hoặc odex <tên>) để bot ghi nhận.", dim = true)
+            return
+        }
+        for ((i, p) in list.withIndex()) {
+            val icon = iconOf(p.emojiId, p.emojiAnimated, p.emoji, p.name)
+            val title = "${p.name ?: "?"}" + (if (p.rankVi != null) " · ${p.rankVi}" else "")
+            val sub = if (p.owned == true) "Đang có ×${HubFormat.num(p.ownedCount)}" else "Chưa có"
+            addIconTextRow(body, icon, title, sub, topDp = if (i == 0) 0 else 14, iconSizeDp = 30)
+            val stats = "HP ${p.hp ?: "?"} · ATT ${p.att ?: "?"} · PR ${p.pr ?: "?"} · WP ${p.wp ?: "?"} · MAG ${p.mag ?: "?"} · MR ${p.mr ?: "?"}"
+            addText(body, stats, sizeSp = 13f, dim = true, topDp = 2)
+            val price = mutableListOf<String>()
+            if (p.sellCowoncy != null) price.add("Bán ${HubFormat.num(p.sellCowoncy)} (×${HubFormat.num(p.sellSoldCount)})")
+            if (p.sacrificeEssence != null) price.add("Hiến ${HubFormat.num(p.sacrificeEssence)} essence (×${HubFormat.num(p.sacrificeKilledCount)})")
+            if (price.isNotEmpty()) addText(body, price.joinToString(" · "), sizeSp = 12f, dim = true, topDp = 2)
         }
     }
 
@@ -336,6 +361,7 @@ class HubFragment : Fragment() {
         setCardAge(KEY_ZOO, h.zoo?.ageSeconds, elapsed)
         setCardAge(KEY_WEAPONS, h.weapons?.ageSeconds, elapsed)
         setCardAge(KEY_INVENTORY, h.inventory?.ageSeconds, elapsed)
+        setCardAge(KEY_PET_DEX, h.petDex?.ageSeconds, elapsed)
     }
 
     private fun tileOrError(errors: Map<String, String>?, key: String, build: () -> TileState): TileState =
@@ -500,6 +526,7 @@ class HubFragment : Fragment() {
         private const val KEY_ZOO = "zoo"
         private const val KEY_WEAPONS = "weapons"
         private const val KEY_INVENTORY = "inventory"
+        private const val KEY_PET_DEX = "pet_dex"
 
         private val TIER_ORDER = listOf(
             "common", "uncommon", "rare", "epic", "mythic", "legendary",

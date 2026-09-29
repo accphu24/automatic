@@ -160,6 +160,11 @@ object HubSummary {
         return LineState("${HubFormat.num(w.count ?: w.weapons?.size)} cây đã ghi nhận", Tone.INFO)
     }
 
+    fun petDexLine(d: HubPetDex?): LineState {
+        if (d == null || d.species.orEmpty().isEmpty()) return noData()
+        return LineState("${HubFormat.num(d.totalOwned)}/${HubFormat.num(d.totalKnown)} loài đang có", Tone.INFO)
+    }
+
     fun inventoryLine(inv: HubInventory?): LineState {
         if (inv == null) return noData()
         return LineState("${HubFormat.num(inv.kinds)} loại · ${HubFormat.num(inv.totalItems)} món", Tone.INFO)

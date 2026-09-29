@@ -56,6 +56,10 @@ dien thoai). Xem muc "Ket noi voi owo-tracker" ben duoi.
   Co them the Daily (dem nguoc gio nhan + streak), Cowoncy, va Quest (dem nguoc quest ke tiep
   + tung quest: ten, tien do, mo ta, thuong).
   Khong con doc/hien battle (Ruby khong can) - owo-tracker cung da bo phan doc battle.
+  Them the Pet Dex (owodex): so lieu GOC tung loai pet (HP/ATT/PR/WP/MAG/MR, gia ban/hien te,
+  hang), KE CA loai chua co - chi can Ruby tung go `owo dex <ten>`/`odex <ten>` 1 lan. Khac Zoo
+  (chi liet ke dang co), Pet Dex liet ke moi loai da tra, dang co xep truoc. Model: HubPetDex/
+  HubPetDexEntry trong HubModels.kt.
 ## 3 TAB (BottomNavigationView) - thay doi cau truc man hinh chinh
 MainActivity gio CHI la khung chua, dieu khien 3 tab qua supportFragmentManager.replace():
   1. navHub       -> HubFragment       (xem GIAO DIEN v2 ben duoi)
