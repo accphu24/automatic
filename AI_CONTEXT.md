@@ -101,9 +101,15 @@ TextInputLayout bo goc, trang thai quyen doi mau theo bat/tat (SettingsFragment.
   @color/border_subtle (co ban sang + toi) thay vi hardcode #22000000/#1E000000.
 - AndroidManifest: allowBackup=false (token nam trong SharedPreferences, khong de Google sao luu). Danh
   doi: kich ban AutoMacro (Room) cung khong con tu sao luu. Chua lam: EncryptedSharedPreferences (can them thu vien).
-- CON TON DONG (muc xanh, chua sua): fetchHub chua disconnect/.use{}; Lam moi bam nhieu lan sinh request chong;
-  zooTileIcon chon theo SO LUONG it nhat (khong phai hang hiem nhat); so qua lon/% ngoai 0-100 hien nguyen;
-  hubVersion/serverTime khong dung; neu bat R8 phai giu lop data.Hub*.
+- v12 DA SUA them 4 muc xanh: OwoTrackerApi dong ket noi (finally conn?.disconnect()); HubFragment.loadHub
+  co co loadingHub nen bam Lam moi nhieu lan khong sinh request chong; zooTileIcon chon theo HANG hiem nhat
+  (ZOO_RARITY_ORDER trong HubIcons.kt), cung hang thi lay loai it con nhat; HubFormat.pct() ep % vao 0..100,
+  HubFormat.num() hien "?" cho so am (so qua 64-bit bi Gson doi thanh am).
+- v13 (theo owo_raw.json that): zoo — so nho trong bang = pet DANG CO; dong cuoi (F-6, CP-16... C-478489) = DA BAT
+  tu truoc toi nay. Hub: total_pets = dang co, them caught_total (HubZoo) va caught (HubTier). Bot v14 cung sua parse_team,
+  kho chia 2 tin, loc tin OwO cua nguoi khac.
+- CON TON DONG (muc xanh, chua sua): hubVersion/serverTime khong dung; neu bat R8 phai giu lop data.Hub*;
+  chuoi tieng Viet viet thang trong Kotlin.
 
   GIAO DIEN v2 (icon that + bieu do): moi pet/gem/tier/thanh vien doi hinh/phan thuong quest
   co the mang emoji_id/emoji_animated (ID that cua Discord, xem view/EmojiImageLoader.kt tai

@@ -14,7 +14,10 @@ object HubFormat {
 
     /** 11272674 -> "11,272,674"; null -> "?" */
     fun num(v: Number?): String =
-        if (v == null) "?" else String.format(Locale.US, "%,d", v.toLong())
+        if (v == null || v.toLong() < 0) "?" else String.format(Locale.US, "%,d", v.toLong())
+
+    /** Phan tram luon nam trong 0..100 (bot gui sai thi van hien hop ly) */
+    fun pct(p: Int?): Int = (p ?: 0).coerceIn(0, 100)
 
     /** 88.50 -> "88.5", 90.0 -> "90" */
     fun trimNum(v: Double?): String {
@@ -123,7 +126,7 @@ object HubFormat {
             for (e in equipped) {
                 val warn = if ((e.percent ?: 100) <= LOW_GEM_PERCENT) " ⚠️ sắp hết" else ""
                 sb.append("\n• Slot ${e.slot ?: "?"} — ${e.tier ?: "?"}$warn")
-                sb.append("\n   ${bar(e.percent)} ${e.current ?: "?"}/${e.max ?: "?"} (${e.percent ?: 0}%)")
+                sb.append("\n   ${bar(e.percent)} ${e.current ?: "?"}/${e.max ?: "?"} (${pct(e.percent)}%)")
             }
         }
         sb.append("\n\nDự phòng trong kho:")
@@ -220,12 +223,14 @@ object HubFormat {
     fun zoo(z: HubZoo?, expanded: Boolean): String {
         if (z == null) return noData("Gõ owo zoo để bot ghi nhận pet.")
         val sb = StringBuilder()
-        sb.append("Zoo Points: ${num(z.zooPoints)} · Tổng ${num(z.totalPets)} pet")
+        sb.append("Zoo Points: ${num(z.zooPoints)} · Đang có ${num(z.totalPets)} pet")
+        // Dong cuoi bang zoo cua OwO = so pet DA BAT tu truoc toi nay (ban di khong giam), khac voi so DANG CO
+        if (z.caughtTotal != null) sb.append("\nĐã bắt từ trước tới nay: ${num(z.caughtTotal)}")
         for ((tier, t) in z.byTier.orEmpty()) {
             if ((t.total ?: 0L) > 0L) sb.append("\n• $tier: ${num(t.total)} con · ${num(t.species)} loài")
         }
         if (expanded) {
-            if (!z.breakdownRaw.isNullOrBlank()) sb.append("\n\nChi tiết: ${z.breakdownRaw}")
+            if (!z.breakdownRaw.isNullOrBlank()) sb.append("\n\nĐã bắt theo hạng: ${z.breakdownRaw}")
             sb.append("\n")
             for ((tier, list) in z.pets.orEmpty().groupBy { it.tier ?: "?" }) {
                 sb.append("\n$tier: ")

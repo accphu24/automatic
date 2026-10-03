@@ -174,6 +174,7 @@ data class HubZoo(
     @SerializedName("zoo_points") val zooPoints: Long? = null,
     @SerializedName("breakdown_raw") val breakdownRaw: String? = null,
     @SerializedName("total_pets") val totalPets: Long? = null,
+    @SerializedName("caught_total") val caughtTotal: Long? = null,
     @SerializedName("by_tier") val byTier: Map<String, HubTier>? = null,
     val pets: List<HubPet>? = null,
     @SerializedName("age_seconds") val ageSeconds: Long? = null
@@ -182,6 +183,7 @@ data class HubZoo(
 data class HubTier(
     val species: Int? = null,
     val total: Long? = null,
+    val caught: Long? = null,
     @SerializedName("emoji_id") val emojiId: String? = null,
     @SerializedName("emoji_animated") val emojiAnimated: Boolean? = null,
     val emoji: String? = null,
