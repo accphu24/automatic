@@ -12,6 +12,9 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import com.tuytam.automacro.data.DexFilter
+import com.tuytam.automacro.data.DexSort
+import com.tuytam.automacro.data.HubDexQuery
 import com.tuytam.automacro.data.HubFormat
 import com.tuytam.automacro.data.HubGems
 import com.tuytam.automacro.data.HubQuest
@@ -79,6 +82,11 @@ class HubFragment : Fragment() {
 
     /** So loai Pet Dex dang hien (hien dan, bam "Hien them" de xem tiep) — tranh dung hang tram dong cung luc. */
     private var dexShown = DEX_PAGE_SIZE
+    // Bo loc / sap xep cua the Pet Dex (giu khi ve lai the, mat khi roi man Hub)
+    private var dexSort = DexSort.DEFAULT
+    private var dexFilter = DexFilter.ALL
+    private var dexRank: String? = null
+    private val chipScrollX = HashMap<String, Int>()
 
     /** Tang len sau MOI lan lay du lieu thanh cong -> cac o tom tat gan lai icon (cho icon loi co co hoi tai lai). */
     private var tileGeneration = 0
@@ -170,7 +178,20 @@ class HubFragment : Fragment() {
         _binding = null
     }
 
+    // Dang co 1 lan lay du lieu chay roi -> bam Lam moi nhieu lan khong sinh request chong nhau
+    private var loadingHub = false
+
     private suspend fun loadHub() {
+        if (loadingHub) return
+        loadingHub = true
+        try {
+            loadHubOnce()
+        } finally {
+            loadingHub = false
+        }
+    }
+
+    private suspend fun loadHubOnce() {
         val settings = OwoTrackerPrefs.load(requireContext())
         if (settings.apiUrl.isBlank() || settings.token.isBlank()) {
             binding.tvHubStatus.text = getString(R.string.hub_need_settings)
@@ -265,9 +286,41 @@ class HubFragment : Fragment() {
     }
 
     private fun fillPetDex(body: LinearLayout, d: com.tuytam.automacro.data.HubPetDex?) {
-        val list = d?.species.orEmpty()
-        if (list.isEmpty()) {
+        val all = d?.species.orEmpty()
+        if (all.isEmpty()) {
             addText(body, "Chưa tra loài pet nào — gõ owo dex <tên> (hoặc odex <tên>) để bot ghi nhận.", dim = true)
+            return
+        }
+        val ranks = HubDexQuery.ranks(all)
+        val savedRank = dexRank
+        if (savedRank != null && !ranks.contains(savedRank)) dexRank = null  // hang cu khong con trong du lieu moi
+
+        // Thanh sap xep / loc: cham 1 nut la danh sach doi ngay
+        addChipRow(body, "dexSort", DexSort.values().map { it.label }, dexSort.ordinal, 0) {
+            dexSort = DexSort.values()[it]
+            dexShown = DEX_PAGE_SIZE
+            rerenderCard(KEY_PET_DEX)
+        }
+        addChipRow(body, "dexFilter", DexFilter.values().map { it.label }, dexFilter.ordinal, 6) {
+            dexFilter = DexFilter.values()[it]
+            dexShown = DEX_PAGE_SIZE
+            rerenderCard(KEY_PET_DEX)
+        }
+        if (ranks.size > 1) {
+            val rankNow = dexRank
+            val rankSel = if (rankNow == null) 0 else ranks.indexOf(rankNow) + 1
+            addChipRow(body, "dexRank", listOf("Mọi hạng") + ranks, rankSel, 6) {
+                dexRank = if (it == 0) null else ranks[it - 1]
+                dexShown = DEX_PAGE_SIZE
+                rerenderCard(KEY_PET_DEX)
+            }
+        }
+
+        val list = HubDexQuery.apply(all, dexSort, dexFilter, dexRank)
+        val hint = if (dexSort == DexSort.DEFAULT || dexSort == DexSort.NAME) "" else " · cao → thấp theo ${dexSort.label}"
+        addText(body, "Hiện ${list.size}/${all.size} loài$hint", sizeSp = 12f, dim = true, topDp = 10)
+        if (list.isEmpty()) {
+            addText(body, "Không có loài nào khớp bộ lọc — thử chọn \"Tất cả\" hoặc \"Mọi hạng\".", dim = true, topDp = 8)
             return
         }
         val shown = list.take(dexShown)
@@ -275,8 +328,8 @@ class HubFragment : Fragment() {
             val icon = iconOf(p.emojiId, p.emojiAnimated, p.emoji, p.name)
             val title = "${p.name ?: "?"}" + (if (p.rankVi != null) " · ${p.rankVi}" else "")
             val sub = if (p.owned == true) "Đang có ×${HubFormat.num(p.ownedCount)}" else "Chưa có"
-            addIconTextRow(body, icon, title, sub, topDp = if (i == 0) 0 else 14, iconSizeDp = 30)
-            val stats = "HP ${p.hp ?: "?"} · ATT ${p.att ?: "?"} · PR ${p.pr ?: "?"} · WP ${p.wp ?: "?"} · MAG ${p.mag ?: "?"} · MR ${p.mr ?: "?"}"
+            addIconTextRow(body, icon, title, sub, topDp = if (i == 0) 8 else 14, iconSizeDp = 30)
+            val stats = HubDexQuery.statsLine(p, dexSort)
             addText(body, stats, sizeSp = 13f, dim = true, topDp = 2)
             val price = mutableListOf<String>()
             if (p.sellCowoncy != null) price.add("Bán ${HubFormat.num(p.sellCowoncy)} (×${HubFormat.num(p.sellSoldCount)})")
@@ -302,7 +355,7 @@ class HubFragment : Fragment() {
             addText(body, "Chưa thấy gem đang trang bị — gõ owo hunt 1 lần để bot ghi nhận.", dim = true)
         }
         for ((i, e) in equipped.withIndex()) {
-            val p = e.percent ?: 0
+            val p = HubFormat.pct(e.percent)
             val warn = if (p <= 15) "  ⚠️ sắp hết" else ""
             val icon = iconOf(e.emojiId, e.emojiAnimated, e.emoji, e.tier)
             val color = toneColor(HubSummary.gemTone(p))
@@ -461,6 +514,52 @@ class HubFragment : Fragment() {
     // ------------------------------------------------------------------
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
+    /** 1 hang nut tron cuon ngang (chon 1). Nho vi tri cuon de khi ve lai khong nhay ve dau hang. */
+    private fun addChipRow(
+        parent: LinearLayout, scrollKey: String, labels: List<String>, selected: Int, topDp: Int,
+        onPick: (Int) -> Unit
+    ) {
+        val ctx = requireContext()
+        val violet = ctx.getColor(R.color.brand_violet)
+        val border = ctx.getColor(R.color.border_subtle)
+        val scroll = android.widget.HorizontalScrollView(ctx)
+        scroll.isHorizontalScrollBarEnabled = false
+        val row = LinearLayout(ctx)
+        row.orientation = LinearLayout.HORIZONTAL
+        for ((i, label) in labels.withIndex()) {
+            val on = i == selected
+            val chip = TextView(ctx)
+            chip.text = label
+            chip.textSize = 13f
+            chip.gravity = Gravity.CENTER
+            chip.setPadding(dp(12), dp(7), dp(12), dp(7))
+            if (on) {
+                chip.setTextColor(android.graphics.Color.WHITE)
+                chip.setTypeface(chip.typeface, android.graphics.Typeface.BOLD)
+            } else {
+                chip.setTextColor(binding.tvHubStatus.textColors)
+            }
+            val bg = GradientDrawable()
+            bg.cornerRadius = dp(16).toFloat()
+            bg.setColor(if (on) violet else android.graphics.Color.TRANSPARENT)
+            bg.setStroke(dp(1), if (on) violet else border)
+            chip.background = bg
+            chip.setOnClickListener {
+                chipScrollX[scrollKey] = scroll.scrollX
+                onPick(i)
+            }
+            val clp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            clp.marginEnd = dp(6)
+            row.addView(chip, clp)
+        }
+        scroll.addView(row)
+        val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        lp.topMargin = dp(topDp)
+        parent.addView(scroll, lp)
+        val x = chipScrollX[scrollKey] ?: 0
+        if (x > 0) scroll.post { scroll.scrollTo(x, 0) }
+    }
 
     private fun addText(
         parent: LinearLayout, text: CharSequence, sizeSp: Float = 15f,

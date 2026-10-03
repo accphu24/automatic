@@ -108,6 +108,8 @@ TextInputLayout bo goc, trang thai quyen doi mau theo bat/tat (SettingsFragment.
 - v13 (theo owo_raw.json that): zoo — so nho trong bang = pet DANG CO; dong cuoi (F-6, CP-16... C-478489) = DA BAT
   tu truoc toi nay. Hub: total_pets = dang co, them caught_total (HubZoo) va caught (HubTier). Bot v14 cung sua parse_team,
   kho chia 2 tin, loc tin OwO cua nguoi khac.
+- v14 Pet Dex: the Pet Dex co 3 hang nut loc/sap xep (Sap xep: Mac dinh/Tong/HP/ATT/MAG/PR/MR/WP/Ten; Loc: Tat ca/Dang co/Chua co;
+  Hang). Logic thuan Kotlin o data/HubDexQuery.kt; trang thai dexSort/dexFilter/dexRank nam trong HubFragment. Chua co JUnit.
 - CON TON DONG (muc xanh, chua sua): hubVersion/serverTime khong dung; neu bat R8 phai giu lop data.Hub*;
   chuoi tieng Viet viet thang trong Kotlin.
 
