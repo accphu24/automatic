@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ban CHE DO TOI cua mau thanh 3 tab: tab chua chon dung trang mo (ban sang dung den mo
+     nen chim tren nen toi). Tab dang chon van la mau chinh. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="?attr/colorPrimary" android:state_checked="true" />
+    <item android:color="#99FFFFFF" />
+</selector>

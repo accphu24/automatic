@@ -5,6 +5,8 @@
     <color name="brand_violet_dark">#4A3FCC</color>
     <color name="brand_amber">#F5A623</color>
     <color name="surface_card_light">#F7F5FE</color>
+    <!-- Vien/duong ke mo: den nhat tren nen sang, trang nhat tren nen toi (truoc day hardcode den, bien mat o che do toi) -->
+    <color name="border_subtle">#22000000</color>
 
     <!-- Mau trang thai cua man hinh Hub (nen sang). Ban toi o values-night/colors.xml -->
     <color name="hub_ok">#2E7D32</color>

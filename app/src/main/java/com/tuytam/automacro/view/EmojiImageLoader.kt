@@ -2,42 +2,46 @@ package com.tuytam.automacro.view
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.os.SystemClock
+import android.util.Log
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.SupervisorJob
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Tai anh emoji that cua Discord va giu tam trong bo nho (mat khi dong app,
- * khong ghi ra the nho). Moi URL chi tai 1 lan trong ca phien lam viec; URL
- * da tai loi thi khong thu lai nua trong phien do (tranh spam mang khi cham
- * lam moi Hub lien tuc ma mang dang yeu).
+ * Tai anh emoji that cua Discord va giu tam trong bo nho (mat khi dong app, khong ghi ra
+ * the nho). Moi link chi tai 1 lan du nhieu noi cung can; link tai loi duoc thu lai sau
+ * [RETRY_AFTER_MS] hoac ngay khi goi [retryFailed] (vd bam Lam moi). Chi tiet xem [AsyncLoadCache].
  */
 object EmojiImageLoader {
-    private val cache = ConcurrentHashMap<String, Bitmap>()
-    private val failed = ConcurrentHashMap.newKeySet<String>()
+    private const val TAG = "EmojiImageLoader"
+    private const val RETRY_AFTER_MS = 90_000L
 
-    suspend fun load(url: String): Bitmap? {
-        cache[url]?.let { return it }
-        if (url in failed) return null
-        return withContext(Dispatchers.IO) {
-            try {
-                val conn = URL(url).openConnection() as HttpURLConnection
-                conn.connectTimeout = 8_000
-                conn.readTimeout = 8_000
-                val bmp = conn.inputStream.use { BitmapFactory.decodeStream(it) }
-                if (bmp != null) {
-                    cache[url] = bmp
-                    bmp
-                } else {
-                    failed += url
-                    null
-                }
-            } catch (e: Exception) {
-                failed += url
-                null
-            }
+    private val cache = AsyncLoadCache<Bitmap>(
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+        retryAfterMs = RETRY_AFTER_MS,
+        now = { SystemClock.elapsedRealtime() },
+        loader = { url -> download(url) }
+    )
+
+    suspend fun load(url: String): Bitmap? = cache.get(url)
+
+    fun retryFailed() = cache.retryFailed()
+
+    private fun download(url: String): Bitmap? {
+        var conn: HttpURLConnection? = null
+        return try {
+            conn = URL(url).openConnection() as HttpURLConnection
+            conn.connectTimeout = 8_000
+            conn.readTimeout = 8_000
+            conn.inputStream.use { BitmapFactory.decodeStream(it) }
+        } catch (e: Exception) {
+            Log.w(TAG, "tai icon loi ($url): ${e.message}")
+            null
+        } finally {
+            conn?.disconnect()
         }
     }
 }

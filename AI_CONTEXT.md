@@ -89,6 +89,22 @@ fragment_automatic.xml: co dong trang thai rong (tvEmptyScripts, AutomaticFragme
 fragment_settings.xml: 2 khoi the rieng (Quyen truy cap / Ket noi owo-tracker), o nhap dang
 TextInputLayout bo goc, trang thai quyen doi mau theo bat/tat (SettingsFragment.kt).
 
+## SAU CODE-AUDIT (4 muc da sua)
+- view/AsyncLoadCache.kt (thuan Kotlin, khong dinh Android): gop nhieu yeu cau cung link thanh 1 lan tai;
+  loi thi nho lai va cho thu lai sau 90s (truoc day loi 1 lan la hong het phien); nguoi xin bi huy thi viec tai
+  van chay tiep. EmojiImageLoader chi con la lop mong dung no (+ Log + disconnect). Bam "Lam moi" goi
+  EmojiImageLoader.retryFailed() de thu lai icon loi ngay.
+- HubFragment: cham 1 the chi ve lai the do (rerenderCard); moi giay chi doi CHU khi chu khac
+  (setTextIfChanged), nen/vien/vong %/icon cua 6 o chi ve lai khi AppliedTile doi hoac sau moi lan lay du lieu
+  (tileGeneration). Pet Dex hien 30 loai/lan (DEX_PAGE_SIZE), bam "Hien them" de xem tiep.
+- Mau: res/color-night/bottom_nav_item_color.xml (tab chua chon trang mo o che do toi); vien/duong ke dung
+  @color/border_subtle (co ban sang + toi) thay vi hardcode #22000000/#1E000000.
+- AndroidManifest: allowBackup=false (token nam trong SharedPreferences, khong de Google sao luu). Danh
+  doi: kich ban AutoMacro (Room) cung khong con tu sao luu. Chua lam: EncryptedSharedPreferences (can them thu vien).
+- CON TON DONG (muc xanh, chua sua): fetchHub chua disconnect/.use{}; Lam moi bam nhieu lan sinh request chong;
+  zooTileIcon chon theo SO LUONG it nhat (khong phai hang hiem nhat); so qua lon/% ngoai 0-100 hien nguyen;
+  hubVersion/serverTime khong dung; neu bat R8 phai giu lop data.Hub*.
+
   GIAO DIEN v2 (icon that + bieu do): moi pet/gem/tier/thanh vien doi hinh/phan thuong quest
   co the mang emoji_id/emoji_animated (ID that cua Discord, xem view/EmojiImageLoader.kt tai
   qua CDN https://cdn.discordapp.com/emojis/<id>.png) hoac emoji (ky tu Unicode co san, cho

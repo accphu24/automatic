@@ -118,7 +118,7 @@
                     android:layout_height="1dp"
                     android:layout_marginTop="16dp"
                     android:layout_marginBottom="14dp"
-                    android:background="#1E000000" />
+                    android:background="@color/border_subtle" />
 
                 <TextView
                     android:id="@+id/tvDiscordTargetsStatus"

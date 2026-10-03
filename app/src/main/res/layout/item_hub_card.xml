@@ -10,7 +10,7 @@
     android:foreground="?attr/selectableItemBackground"
     app:cardCornerRadius="14dp"
     app:cardElevation="0dp"
-    app:strokeColor="#22000000"
+    app:strokeColor="@color/border_subtle"
     app:strokeWidth="1dp">
 
     <LinearLayout

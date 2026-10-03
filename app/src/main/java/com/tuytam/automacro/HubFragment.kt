@@ -40,6 +40,7 @@ import com.tuytam.automacro.databinding.ItemHubCardBinding
 import com.tuytam.automacro.databinding.ItemHubTileBinding
 import com.tuytam.automacro.view.BarChartView
 import com.tuytam.automacro.view.BarEntry
+import com.tuytam.automacro.view.EmojiImageLoader
 import com.tuytam.automacro.view.IconView
 import com.tuytam.automacro.view.RingView
 import kotlinx.coroutines.Job
@@ -76,7 +77,16 @@ class HubFragment : Fragment() {
     private var fetchJob: Job? = null
     private var tickJob: Job? = null
 
+    /** So loai Pet Dex dang hien (hien dan, bam "Hien them" de xem tiep) — tranh dung hang tram dong cung luc. */
+    private var dexShown = DEX_PAGE_SIZE
+
+    /** Tang len sau MOI lan lay du lieu thanh cong -> cac o tom tat gan lai icon (cho icon loi co co hoi tai lai). */
+    private var tileGeneration = 0
+
     private class Card(val key: String, val ui: ItemHubCardBinding, val accentColor: Int)
+
+    /** Trang thai da ve len 1 o tom tat — chi ve lai nen/icon/vong tron khi cai nay doi, khong ve lai moi giay. */
+    private data class AppliedTile(val tone: Tone, val icon: IconSpec, val ring: Int?, val generation: Int)
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentHubBinding.inflate(inflater, container, false)
@@ -111,6 +121,7 @@ class HubFragment : Fragment() {
         }
 
         binding.btnHubRefresh.setOnClickListener {
+            EmojiImageLoader.retryFailed()
             viewLifecycleOwner.lifecycleScope.launch { loadHub() }
         }
     }
@@ -125,7 +136,7 @@ class HubFragment : Fragment() {
         ui.tvCardArrow.text = if (key in expanded) ARROW_OPEN else ARROW_CLOSED
         ui.root.setOnClickListener {
             if (!expanded.add(key)) expanded.remove(key)
-            renderBodies()
+            rerenderCard(key)
         }
         return Card(key, ui, accentColor)
     }
@@ -171,6 +182,7 @@ class HubFragment : Fragment() {
             is HubResult.Success -> {
                 hub = result.hub
                 fetchedAtMs = SystemClock.elapsedRealtime()
+                tileGeneration++
                 val clock = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
                 binding.tvHubStatus.text = getString(R.string.hub_updated_at, clock)
                 renderBodies()
@@ -187,24 +199,33 @@ class HubFragment : Fragment() {
     // Ve giao dien
     // ------------------------------------------------------------------
 
-    /** Ve lai dong tom tat + icon tieu de + noi dung cac the — khi co du lieu moi hoac khi cham mo/dong. */
+    /** Ve lai TOAN BO cac the — khi co du lieu moi (30 giay/lan). */
     private fun renderBodies() {
         val h = hub ?: return
-        for (card in cards) {
-            val error = h.sectionErrors?.get(card.key)
-            val line = if (error != null) LineState("⚠️ Không đọc được mục này", Tone.BAD) else summaryOf(card.key, h)
-            val ui = card.ui
-            ui.tvCardSummary.text = line.text
-            ui.tvCardSummary.setTextColor(toneColor(line.tone))
-            ui.ivCardIcon.bind(viewLifecycleOwner.lifecycleScope, if (error != null) IconSpec(unicode = "⚠️") else cardIconFor(card.key, h))
+        for (card in cards) renderCard(card, h)
+    }
 
-            val open = card.key in expanded
-            ui.tvCardArrow.text = if (open) ARROW_OPEN else ARROW_CLOSED
-            ui.llCardBody.removeAllViews()
-            ui.llCardBody.visibility = if (open) View.VISIBLE else View.GONE
-            if (open) {
-                if (error != null) addText(ui.llCardBody, HubFormat.sectionError(error)) else fillBody(card.key, h, ui.llCardBody)
-            }
+    /** Chi ve lai DUNG 1 the — khi cham mo/dong hoac bam "Hien them" (khong dung toi 6 the con lai). */
+    private fun rerenderCard(key: String) {
+        val h = hub ?: return
+        cards.firstOrNull { it.key == key }?.let { renderCard(it, h) }
+    }
+
+    /** Ve dong tom tat + icon tieu de + noi dung (neu dang mo) cua 1 the. */
+    private fun renderCard(card: Card, h: HubResponse) {
+        val error = h.sectionErrors?.get(card.key)
+        val line = if (error != null) LineState("⚠️ Không đọc được mục này", Tone.BAD) else summaryOf(card.key, h)
+        val ui = card.ui
+        ui.tvCardSummary.text = line.text
+        ui.tvCardSummary.setTextColor(toneColor(line.tone))
+        ui.ivCardIcon.bind(viewLifecycleOwner.lifecycleScope, if (error != null) IconSpec(unicode = "⚠️") else cardIconFor(card.key, h))
+
+        val open = card.key in expanded
+        ui.tvCardArrow.text = if (open) ARROW_OPEN else ARROW_CLOSED
+        ui.llCardBody.removeAllViews()
+        ui.llCardBody.visibility = if (open) View.VISIBLE else View.GONE
+        if (open) {
+            if (error != null) addText(ui.llCardBody, HubFormat.sectionError(error)) else fillBody(card.key, h, ui.llCardBody)
         }
     }
 
@@ -249,7 +270,8 @@ class HubFragment : Fragment() {
             addText(body, "Chưa tra loài pet nào — gõ owo dex <tên> (hoặc odex <tên>) để bot ghi nhận.", dim = true)
             return
         }
-        for ((i, p) in list.withIndex()) {
+        val shown = list.take(dexShown)
+        for ((i, p) in shown.withIndex()) {
             val icon = iconOf(p.emojiId, p.emojiAnimated, p.emoji, p.name)
             val title = "${p.name ?: "?"}" + (if (p.rankVi != null) " · ${p.rankVi}" else "")
             val sub = if (p.owned == true) "Đang có ×${HubFormat.num(p.ownedCount)}" else "Chưa có"
@@ -260,6 +282,17 @@ class HubFragment : Fragment() {
             if (p.sellCowoncy != null) price.add("Bán ${HubFormat.num(p.sellCowoncy)} (×${HubFormat.num(p.sellSoldCount)})")
             if (p.sacrificeEssence != null) price.add("Hiến ${HubFormat.num(p.sacrificeEssence)} essence (×${HubFormat.num(p.sacrificeKilledCount)})")
             if (price.isNotEmpty()) addText(body, price.joinToString(" · "), sizeSp = 12f, dim = true, topDp = 2)
+        }
+        val remaining = list.size - shown.size
+        if (remaining > 0) {
+            val more = addText(body, "Hiện thêm ${minOf(remaining, DEX_PAGE_SIZE)} loài (còn $remaining) ▾",
+                sizeSp = 14f, bold = true, topDp = 12)
+            more.setTextColor(requireContext().getColor(R.color.brand_violet))
+            more.setPadding(0, dp(10), 0, dp(10))
+            more.setOnClickListener {
+                dexShown += DEX_PAGE_SIZE
+                rerenderCard(KEY_PET_DEX)
+            }
         }
     }
 
@@ -369,14 +402,27 @@ class HubFragment : Fragment() {
 
     private fun setCardAge(key: String, ageSeconds: Long?, elapsedSec: Long) {
         val card = cards.firstOrNull { it.key == key } ?: return
-        card.ui.tvCardAge.text = if (ageSeconds == null) "" else HubFormat.age(ageSeconds + elapsedSec)
+        setTextIfChanged(card.ui.tvCardAge, if (ageSeconds == null) "" else HubFormat.age(ageSeconds + elapsedSec))
+    }
+
+    /** Dat chu chi khi KHAC chu dang hien — tranh bat TextView do lai bo cuc moi giay khi chu khong doi. */
+    private fun setTextIfChanged(tv: TextView, text: CharSequence) {
+        if (tv.text.toString() != text.toString()) tv.text = text
     }
 
     private fun applyTile(tile: ItemHubTileBinding, state: TileState) {
+        // Chu (dem nguoc) co the doi moi giay -> cap nhat khi khac
+        setTextIfChanged(tile.tvTileValue, state.value)
+        setTextIfChanged(tile.tvTileSub, state.sub)
+
+        // Nen tron, vien, vong %, icon: chi ve lai khi mau/icon/% doi hoac vua co du lieu moi
+        // (tileGeneration) — moi giay khong tao lai Drawable va khong gan lai icon nua.
+        val applied = AppliedTile(state.tone, state.icon, state.ringPercent, tileGeneration)
+        if (tile.root.tag == applied) return
+        tile.root.tag = applied
+
         val color = toneColor(state.tone)
-        tile.tvTileValue.text = state.value
         tile.tvTileValue.setTextColor(color)
-        tile.tvTileSub.text = state.sub
         tile.root.strokeColor = color
         tile.flTileIconBg.background = circleDrawable(withAlpha(color, 32))
         tile.rvTileRing.ringColor = color
@@ -527,6 +573,7 @@ class HubFragment : Fragment() {
         private const val KEY_WEAPONS = "weapons"
         private const val KEY_INVENTORY = "inventory"
         private const val KEY_PET_DEX = "pet_dex"
+        private const val DEX_PAGE_SIZE = 30
 
         private val TIER_ORDER = listOf(
             "common", "uncommon", "rare", "epic", "mythic", "legendary",
