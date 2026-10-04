@@ -1,4 +1,4 @@
-# AI_CONTEXT.md — AutoMacro (TuyTam)
+# AI_CONTEXT.md — Star Hub (truoc day: AutoMacro / TuyTam)
 
 ## Du an la gi
 App Android tu dong hoa thao tac tren may (bam, vuot, go chu, mo app) - kieu
@@ -10,6 +10,27 @@ Dang ket hop voi du an rieng "owo-tracker" (bot Discord theo doi choi OwO,
 repo Python/discord.py rieng) de tao 1 he thong tap trung: owo-tracker la
 "bo nao" (biet luc nao can lam gi), AutoMacro la "tay chan" (thuc thi tren
 dien thoai). Xem muc "Ket noi voi owo-tracker" ben duoi.
+
+## v15 — Doi ten thanh STAR HUB (Ruby chon, 4/10/2026)
+- Ten app: **Star Hub**. Ten goi: `com.starclan.starhub` (truoc: `com.tuytam.automacro`). Day la app MOI
+  tren Android -> phai nhap lai dia chi API/token, cap lai quyen Accessibility; go ban cu bang tay.
+- Icon: mau A — ngoi sao vang (#FAC775) tren nen tim (#3C3489), adaptive icon (mipmap-anydpi-v26).
+- Ten style/theme (Theme.AutoMacro, Widget.AutoMacro.*) GIU NGUYEN, chi la ten noi bo.
+- Bien moi truong cua bot `AUTOMACRO_API_TOKEN` GIU NGUYEN (khong lien quan ten goi).
+- Hub: bo dong "N loai · M mon" in 2 lan o the Kho; the Gem hien gio cap nhat RIENG cho "Du phong trong kho"
+  (bot v16 gui `gems.spare_age_seconds`, lay tu owo inv; gem dang dung lay tu owo hunt).
+- Tu dong gui lenh Discord viet lai (engine/DiscordSender.kt + engine/NodeTools.kt):
+  * Nguyen nhan loi cu (de xuat, chua kiem chung tren may): cu cham chi "bat" roi chay buoc go chu NGAY
+    (o nhap chua kip duoc chon); khong mo Discord truoc; SET_TEXT khong doc lai de xac nhan.
+  * Moi lenh: mo Discord (dung kenh neu co link trong Cai dat) -> dung neu thay captcha OwO -> tim o nhap
+    -> go (SET_TEXT, khong vao thi dan clipboard) va DOC LAI -> bam nut Gui (theo nhan Send/Gui, khong co thi
+    toa do) -> doc lai xem chu da roi o nhap chua. Nghi ngau nhien 0.4-1.1s giua buoc, 2.5-5.5s giua lenh.
+  * Gap captcha: rung + chuong, tam dung gui lenh 10 phut, lenh do ack "failed".
+  * Cai dat them o "Link kenh Discord" (khong bat buoc). Toa do o nhap/nut Gui chi con la phuong an DU PHONG.
+  * accessibility_service_config them flagReportViewIds + flagIncludeNotImportantViews (Discord la React Native).
+  * ScriptEngine: buoc Bam gio CHO cu cham xong (performClickAwait) + nghi 0.4s; buoc Go chu dung NodeTools.typeInto.
+- CHUA BIEN DICH TREN MAY: code Kotlin viet khong co Android SDK/Gradle, chi kiem tra tinh (can ngoac, package,
+  import). Neu GitHub Actions bao loi bien dich thi gui log de sua.
 
 ## Trang thai hien tai (da lam duoc)
 - Khung project: Gradle, AndroidManifest, build qua GitHub Actions (khong dung gradlew,
@@ -159,7 +180,7 @@ TextInputLayout bo goc, trang thai quyen doi mau theo bat/tat (SettingsFragment.
 - Build qua GitHub Actions (.github/workflows/build.yml) — chay `gradle assembleDebug`
 
 ## Cau truc thu muc chinh
-app/src/main/java/com/tuytam/automacro/
+app/src/main/java/com/starclan/starhub/
   MainActivity.kt                         - CHI dieu khien 3 tab duoi (BottomNavigationView),
                                               khong con chua logic gi khac. Mac dinh mo tab Hub.
   HubFragment.kt                          - tab "OwO Hub" (truoc la HubActivity, gio la Fragment)

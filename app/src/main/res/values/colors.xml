@@ -23,4 +23,7 @@
     <color name="hub_accent_weapons">#8D6E63</color>
     <color name="hub_accent_inventory">#FFB300</color>
     <color name="hub_accent_pet_dex">#7CB342</color>
+
+    <!-- Icon app Star Hub (mau A: sao vang tren nen tim) -->
+    <color name="ic_launcher_background">#3C3489</color>
 </resources>

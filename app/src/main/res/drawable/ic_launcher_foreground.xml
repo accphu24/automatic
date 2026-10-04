@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ngoi sao vang cua icon Star Hub (nam trong vung an toan 66dp o giua) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FAC775"
+        android:pathData="M54,30.5 L60.37,47.74 L78.72,48.47 L64.3,59.84 L69.28,77.53 L54,67.33 L38.72,77.53 L43.7,59.84 L29.28,48.47 L47.63,47.74 Z" />
+</vector>

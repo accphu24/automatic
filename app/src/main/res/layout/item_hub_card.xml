@@ -41,7 +41,7 @@
                     android:layout_width="30dp"
                     android:layout_height="30dp">
 
-                    <com.tuytam.automacro.view.IconView
+                    <com.starclan.starhub.view.IconView
                         android:id="@+id/ivCardIcon"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"

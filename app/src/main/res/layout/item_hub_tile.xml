@@ -30,12 +30,12 @@
                 android:layout_width="38dp"
                 android:layout_height="38dp">
 
-                <com.tuytam.automacro.view.RingView
+                <com.starclan.starhub.view.RingView
                     android:id="@+id/rvTileRing"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent" />
 
-                <com.tuytam.automacro.view.IconView
+                <com.starclan.starhub.view.IconView
                     android:id="@+id/ivTileIcon"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
