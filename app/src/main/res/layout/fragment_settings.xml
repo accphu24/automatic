@@ -143,6 +143,21 @@
                     android:layout_marginTop="10dp"
                     android:text="@string/btn_test_open_discord" />
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnToggleHub"
+                    style="@style/Widget.AutoMacro.Button.Outlined"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/btn_toggle_hub" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/note_toggle_hub"
+                    android:textSize="11sp" />
+
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"

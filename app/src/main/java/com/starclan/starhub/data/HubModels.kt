@@ -21,8 +21,41 @@ data class HubResponse(
     val inventory: HubInventory? = null,
     val weapons: HubWeapons? = null,
     val petDex: HubPetDex? = null,
+    val battle: HubBattle? = null,
+    val newPets: HubNewPets? = null,
+    val channel: HubChannel? = null,
     /** Muc nao khong doc duoc -> ten muc + ly do (vd "zoo" -> "Expected BEGIN_ARRAY..."). Cac muc con lai van hien binh thuong. */
     val sectionErrors: Map<String, String>? = null
+)
+
+// ---- Chuoi battle (tu dong cuoi tin owo battle) ----
+data class HubBattle(
+    val result: String? = null,
+    val turns: Int? = null,
+    val xp: Long? = null,
+    val streak: Int? = null,
+    @SerializedName("best_streak") val bestStreak: Int? = null,
+    @SerializedName("last_lost_streak") val lastLostStreak: Int? = null,
+    @SerializedName("age_seconds") val ageSeconds: Long? = null
+)
+
+// ---- Pet moi: bat duoc ma chua co trong zoo ----
+data class HubNewPet(
+    val name: String? = null,
+    val rank: String? = null,
+    @SerializedName("rank_vi") val rankVi: String? = null,
+    @SerializedName("times_found") val timesFound: Int? = null,
+    @SerializedName("first_found_at") val firstFoundAt: String? = null,
+    @SerializedName("last_found_at") val lastFoundAt: String? = null
+)
+
+data class HubNewPets(val pets: List<HubNewPet>? = null)
+
+// ---- Kenh duoc chi dinh bang ,setchannel ----
+data class HubChannel(
+    val id: String? = null,
+    val link: String? = null,
+    val name: String? = null
 )
 
 // ---- Pet Dex (owodex): so lieu GOC tung loai, KE CA loai chua co ----
@@ -179,10 +212,14 @@ data class HubZoo(
     @SerializedName("caught_total") val caughtTotal: Long? = null,
     @SerializedName("by_tier") val byTier: Map<String, HubTier>? = null,
     val pets: List<HubPet>? = null,
+    /** So luong 0 = da bat, da hien te het: VAN LA DA CO / DA MO KHOA */
+    @SerializedName("sacrificed_pets") val sacrificedPets: List<HubPet>? = null,
+    @SerializedName("unlocked_total") val unlockedTotal: Int? = null,
     @SerializedName("age_seconds") val ageSeconds: Long? = null
 )
 
 data class HubTier(
+    val sacrificed: Int? = null,
     val species: Int? = null,
     val total: Long? = null,
     val caught: Long? = null,

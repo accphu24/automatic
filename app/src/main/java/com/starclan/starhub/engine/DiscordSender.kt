@@ -6,6 +6,8 @@ import android.util.Log
 import com.starclan.starhub.data.OwoTrackerPrefs
 import com.starclan.starhub.service.AutoAccessibilityService
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.random.Random
 
 /** Ket qua 1 lan gui lenh vao Discord */
@@ -43,6 +45,9 @@ class DiscordSender(private val service: AutoAccessibilityService) {
     companion object {
         private const val TAG = "DiscordSender"
         const val DISCORD_PACKAGE = "com.discord"
+
+        /** Chi 1 lenh duoc go vao Discord tai 1 thoi diem (farm va lenh thay gem khong go chong cheo) */
+        val sendMutex = Mutex()
     }
 
     private fun foregroundPackage(): String? = service.rootInActiveWindow?.packageName?.toString()
@@ -121,7 +126,10 @@ class DiscordSender(private val service: AutoAccessibilityService) {
     /**
      * @param reopenChannel true -> mo lai Discord/kenh truoc khi gui (dung cho lenh DAU TIEN cua moi dot).
      */
-    suspend fun send(text: String, settings: OwoTrackerPrefs.Settings, reopenChannel: Boolean): SendResult {
+    suspend fun send(text: String, settings: OwoTrackerPrefs.Settings, reopenChannel: Boolean): SendResult =
+        sendMutex.withLock { sendLocked(text, settings, reopenChannel) }
+
+    private suspend fun sendLocked(text: String, settings: OwoTrackerPrefs.Settings, reopenChannel: Boolean): SendResult {
         if (reopenChannel || foregroundPackage() != DISCORD_PACKAGE) {
             if (!openDiscord(settings.discordLink)) return SendResult.DISCORD_NOT_OPEN
         }

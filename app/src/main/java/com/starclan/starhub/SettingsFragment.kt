@@ -15,6 +15,7 @@ import com.starclan.starhub.databinding.FragmentSettingsBinding
 import com.starclan.starhub.engine.DiscordSender
 import com.starclan.starhub.engine.OpenResult
 import com.starclan.starhub.service.AutoAccessibilityService
+import com.starclan.starhub.view.FarmOverlay
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -63,6 +64,15 @@ class SettingsFragment : Fragment() {
                     Toast.makeText(requireContext(), getString(R.string.toast_targets_saved), Toast.LENGTH_SHORT).show()
                 }
             }
+        }
+
+        binding.btnToggleHub.setOnClickListener {
+            val service = AutoAccessibilityService.instance
+            if (service == null) {
+                Toast.makeText(requireContext(), getString(R.string.toast_service_not_enabled), Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (FarmOverlay.isShown()) FarmOverlay.hide() else FarmOverlay.show(service)
         }
 
         binding.btnTestOpenDiscord.setOnClickListener {
