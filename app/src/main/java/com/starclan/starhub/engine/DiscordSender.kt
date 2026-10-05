@@ -18,6 +18,16 @@ enum class SendResult {
     CAPTCHA             // OwO dang doi giai captcha -> DUNG, de Ruby tu giai
 }
 
+/** Ket qua 1 lan MO Discord (dung cho nut "Thu mo Discord" va cho buoc mo truoc khi gui lenh) */
+enum class OpenResult {
+    OK_CHANNEL,          // da mo Discord va vao kenh theo link
+    OK_APP_ONLY,         // da mo Discord (khong co link kenh nen chi mo app)
+    OK_LINK_FAILED,      // mo duoc Discord nhung link kenh loi -> chi mo app, chua vao dung kenh
+    NOT_INSTALLED,       // may khong co app Discord (com.discord)
+    LAUNCH_ERROR,        // Android khong cho mo
+    NOT_FOREGROUND       // da ra lenh mo nhung Discord khong len man hinh sau ~10 giay
+}
+
 /**
  * Gui 1 lenh (VD: "owo use 52") vao Discord, tung buoc co kiem tra:
  *  1. Dam bao Discord dang o truoc (mo dung kenh neu Ruby da dan link kenh).
@@ -39,32 +49,73 @@ class DiscordSender(private val service: AutoAccessibilityService) {
 
     private suspend fun humanPause(minMs: Long, maxMs: Long) = delay(Random.nextLong(minMs, maxMs))
 
-    /** Mo Discord (vao dung kenh neu co link), doi toi da ~10 giay cho Discord len man hinh. */
-    private suspend fun openDiscord(channelLink: String): Boolean {
-        val intent = if (channelLink.isNotBlank()) {
-            Intent(Intent.ACTION_VIEW, Uri.parse(channelLink.trim())).setPackage(DISCORD_PACKAGE)
-        } else {
-            service.packageManager.getLaunchIntentForPackage(DISCORD_PACKAGE)
-        }
-        if (intent == null) {
-            Log.w(TAG, "Khong tim thay app Discord tren may")
-            return false
-        }
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        try {
-            service.startActivity(intent)
+    /**
+     * Mo Discord (vao dung kenh neu co link), doi toi da ~10 giay cho Discord len man hinh.
+     * Tra ve ly do cu the de nut "Thu mo Discord" bao duoc loi o dau.
+     */
+    suspend fun openDiscordDetailed(channelLink: String): OpenResult {
+        val pm = service.packageManager
+        val installed = try {
+            pm.getPackageInfo(DISCORD_PACKAGE, 0)
+            true
         } catch (e: Exception) {
-            Log.w(TAG, "Mo Discord loi: ${e.message}")
-            return false
+            false
         }
+        if (!installed) {
+            Log.w(TAG, "Khong tim thay app Discord tren may")
+            return OpenResult.NOT_INSTALLED
+        }
+
+        val link = channelLink.trim()
+        var started = false
+        var usedLink = false
+        if (link.isNotEmpty()) {
+            try {
+                val linkIntent = Intent(Intent.ACTION_VIEW, Uri.parse(link))
+                    .setPackage(DISCORD_PACKAGE)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                service.startActivity(linkIntent)
+                started = true
+                usedLink = true
+            } catch (e: Exception) {
+                Log.w(TAG, "Mo link kenh loi (${e.message}) - thu mo app Discord khong kem link")
+            }
+        }
+        if (!started) {
+            val launchIntent = pm.getLaunchIntentForPackage(DISCORD_PACKAGE)
+            if (launchIntent == null) {
+                Log.w(TAG, "Khong lay duoc intent mo Discord")
+                return OpenResult.LAUNCH_ERROR
+            }
+            launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            try {
+                service.startActivity(launchIntent)
+            } catch (e: Exception) {
+                Log.w(TAG, "Mo Discord loi: ${e.message}")
+                return OpenResult.LAUNCH_ERROR
+            }
+        }
+
         for (i in 0 until 25) {
             delay(400)
             if (foregroundPackage() == DISCORD_PACKAGE) {
                 delay(1500) // cho kenh tai xong
-                return true
+                return when {
+                    usedLink -> OpenResult.OK_CHANNEL
+                    link.isNotEmpty() -> OpenResult.OK_LINK_FAILED
+                    else -> OpenResult.OK_APP_ONLY
+                }
             }
         }
-        return false
+        return OpenResult.NOT_FOREGROUND
+    }
+
+    /** Chi mo Discord (khong gui gi) - dung cho nut "Thu mo Discord". */
+    suspend fun openOnly(channelLink: String): OpenResult = openDiscordDetailed(channelLink)
+
+    private suspend fun openDiscord(channelLink: String): Boolean {
+        val r = openDiscordDetailed(channelLink)
+        return r == OpenResult.OK_CHANNEL || r == OpenResult.OK_APP_ONLY || r == OpenResult.OK_LINK_FAILED
     }
 
     /**

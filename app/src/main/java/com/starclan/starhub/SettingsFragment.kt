@@ -1,6 +1,8 @@
 package com.starclan.starhub
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.text.TextUtils
 import android.view.LayoutInflater
@@ -10,7 +12,12 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.starclan.starhub.data.OwoTrackerPrefs
 import com.starclan.starhub.databinding.FragmentSettingsBinding
+import com.starclan.starhub.engine.DiscordSender
+import com.starclan.starhub.engine.OpenResult
 import com.starclan.starhub.service.AutoAccessibilityService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Tab "Cài đặt": quyền Accessibility (bắt buộc để chạy kịch bản/theo dõi OwO) +
@@ -54,6 +61,32 @@ class SettingsFragment : Fragment() {
                 activity?.runOnUiThread {
                     if (_binding != null) updateTargetsStatusText(true)
                     Toast.makeText(requireContext(), getString(R.string.toast_targets_saved), Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        binding.btnTestOpenDiscord.setOnClickListener {
+            val service = AutoAccessibilityService.instance
+            if (service == null) {
+                Toast.makeText(requireContext(), getString(R.string.toast_service_not_enabled), Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val appContext = requireContext().applicationContext
+            // Dung link dang go trong o (khong can bam Luu truoc khi thu)
+            val link = binding.etDiscordLink.text.toString().trim()
+            Toast.makeText(appContext, appContext.getString(R.string.toast_testing_open_discord), Toast.LENGTH_SHORT).show()
+            CoroutineScope(Dispatchers.Default).launch {
+                val result = DiscordSender(service).openOnly(link)
+                val msgRes = when (result) {
+                    OpenResult.OK_CHANNEL -> R.string.result_open_ok_channel
+                    OpenResult.OK_APP_ONLY -> R.string.result_open_ok_app
+                    OpenResult.OK_LINK_FAILED -> R.string.result_open_link_failed
+                    OpenResult.NOT_INSTALLED -> R.string.result_open_not_installed
+                    OpenResult.LAUNCH_ERROR -> R.string.result_open_launch_error
+                    OpenResult.NOT_FOREGROUND -> R.string.result_open_not_foreground
+                }
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(appContext, appContext.getString(msgRes), Toast.LENGTH_LONG).show()
                 }
             }
         }

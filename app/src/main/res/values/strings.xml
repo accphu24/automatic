@@ -15,6 +15,14 @@
     <string name="note_owo_sync">Khi bật, cứ 15 giây app sẽ hỏi owo-tracker có lệnh mới không. Lệnh có tên hành động trùng với tên 1 kịch bản đã lưu (VD: kịch bản tên "swap_gem" khớp lệnh swap_gem) sẽ tự chạy.</string>
     <string name="label_discord_link">Link kênh Discord (không bắt buộc)</string>
     <string name="note_discord_link">Nhấn giữ kênh trong Discord → Sao chép liên kết rồi dán vào đây. Có link thì Star Hub tự mở đúng kênh trước khi gõ lệnh.</string>
+    <string name="btn_test_open_discord">▶️ Thử mở Discord</string>
+    <string name="toast_testing_open_discord">Đang mở Discord…</string>
+    <string name="result_open_ok_channel">✅ Đã mở Discord và vào đúng kênh theo link</string>
+    <string name="result_open_ok_app">✅ Đã mở Discord (chưa có link kênh nên chỉ mở app)</string>
+    <string name="result_open_link_failed">⚠️ Mở được Discord nhưng link kênh bị lỗi nên chưa vào đúng kênh. Kiểm tra lại link</string>
+    <string name="result_open_not_installed">❌ Không thấy app Discord (com.discord) trên máy</string>
+    <string name="result_open_launch_error">❌ Android không cho mở Discord. Mở Star Hub lên màn hình rồi bấm lại</string>
+    <string name="result_open_not_foreground">❌ Đã ra lệnh mở nhưng Discord không lên màn hình sau 10 giây. Kiểm tra màn hình đã mở khóa chưa</string>
     <string name="toast_owo_settings_saved">Đã lưu cài đặt kết nối</string>
     <string name="toast_owo_settings_saved_no_service">Đã lưu, nhưng cần bật quyền Accessibility thì mới bắt đầu kiểm tra lệnh được</string>
     <string name="btn_setup_discord_targets">📍 Cài vị trí ô nhập &amp; nút Gửi Discord</string>
