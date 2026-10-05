@@ -45,6 +45,7 @@ object FarmOverlay {
     private var tvZoo: TextView? = null
     private var tvPets: TextView? = null
     private var btnToggle: Button? = null
+    private var btnMute: Button? = null
     private var scope: CoroutineScope? = null
     private var refreshJob: Job? = null
 
@@ -76,6 +77,7 @@ object FarmOverlay {
         windowManager = wm
         val density = service.resources.displayMetrics.density
         val screenH = service.resources.displayMetrics.heightPixels
+        val screenW = service.resources.displayMetrics.widthPixels
         fun dp(v: Int): Int = (v * density).toInt()
 
         val lp = WindowManager.LayoutParams(
@@ -148,11 +150,18 @@ object FarmOverlay {
         toggle.setAllCaps(false)
         toggle.textSize = 12f
         btnToggle = toggle
+        val muteBtn = Button(service)
+        muteBtn.text = "🔕 Tắt chuông"
+        muteBtn.setAllCaps(false)
+        muteBtn.textSize = 12f
+        muteBtn.visibility = View.GONE
+        btnMute = muteBtn
         val closeBtn = Button(service)
-        closeBtn.text = "✕ Dừng & ẩn"
+        closeBtn.text = "✕ Ẩn"
         closeBtn.setAllCaps(false)
         closeBtn.textSize = 12f
         buttons.addView(toggle, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        buttons.addView(muteBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         buttons.addView(closeBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
 
         val content = LinearLayout(service)
@@ -167,9 +176,11 @@ object FarmOverlay {
 
         val scroll = ScrollView(service)
         scroll.addView(content)
-        panelBox.addView(buttons)
-        panelBox.addView(scroll, LinearLayout.LayoutParams(dp(270), (screenH * 0.42f).toInt()))
-        container.addView(panelBox)
+        val panelWidth = minOf(dp(290), screenW - dp(40))
+        panelBox.addView(buttons, LinearLayout.LayoutParams(panelWidth, LinearLayout.LayoutParams.WRAP_CONTENT))
+        panelBox.addView(scroll, LinearLayout.LayoutParams(panelWidth, (screenH * 0.42f).toInt()))
+        container.addView(panelBox, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
 
         // ---- Su kien ----
         toggle.setOnClickListener {
@@ -180,6 +191,7 @@ object FarmOverlay {
                 FarmController.start(service)
             }
         }
+        muteBtn.setOnClickListener { FarmController.stopAlarm() }
         closeBtn.setOnClickListener {
             FarmController.stop()
             hide()
@@ -271,6 +283,7 @@ object FarmOverlay {
         val running = if (st.running) "\n${st.status}" else ""
         tvStatus?.text = head + running + last
         btnToggle?.text = if (st.running) "⏹ Dừng" else "▶ Bắt đầu"
+        btnMute?.visibility = if (st.ringing) View.VISIBLE else View.GONE
 
         val alertText = st.alert
         if (alertText.isNullOrBlank()) {

@@ -33,7 +33,9 @@ data class FarmState(
     val sessionStartIso: String? = null,
     val sessionNewPets: List<String> = emptyList(),
     /** Canh bao can Ruby de y (pet moi, can giai captcha...) - Hub noi tu mo rong khi co */
-    val alert: String? = null
+    val alert: String? = null,
+    /** Dang reo chuong captcha */
+    val ringing: Boolean = false
 )
 
 /**
@@ -63,6 +65,9 @@ object FarmController {
     private const val REST_MAX_MS = 240_000L
     private const val MAX_FAILS_IN_ROW = 3
     private const val ZOO_WAIT_MS = 25_000L
+    private const val CAPTCHA_POLL_MS = 4_000L    // hoi bot moi 4 giay xem OwO co doi captcha khong
+    private const val CAPTCHA_MESSAGE =
+        "🚨 OwO đòi captcha — đã dừng farm! Giải xong gõ ,captcha clear rồi bấm Bắt đầu lại"
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var job: Job? = null
@@ -80,8 +85,22 @@ object FarmController {
         update { it.copy(alert = null) }
     }
 
+    /** Tat chuong captcha (nut "Tat chuong" tren Hub noi) */
+    fun stopAlarm() {
+        AlarmPlayer.stop()
+        update { it.copy(ringing = false) }
+    }
+
+    /** OwO doi captcha: reo chuong + rung, dung farm, hien canh bao tren Hub noi */
+    private fun handleCaptcha(ctx: Context) {
+        AlarmPlayer.onStopped = { update { it.copy(ringing = false) } }
+        AlarmPlayer.start(ctx)
+        update { it.copy(running = false, status = CAPTCHA_MESSAGE, alert = CAPTCHA_MESSAGE, ringing = true) }
+    }
+
     fun start(service: AutoAccessibilityService) {
         if (isRunning()) return
+        stopAlarm()
         job = scope.launch {
             try {
                 runFarm(service)
@@ -97,6 +116,7 @@ object FarmController {
     fun stop() {
         job?.cancel()
         job = null
+        stopAlarm()
         update { it.copy(running = false, status = "Đã dừng", alert = null) }
     }
 
@@ -185,7 +205,32 @@ object FarmController {
         }
     }
 
+    /** Canh gac: bot (mat) thay OwO doi captcha thi dung farm ngay, khong doi het vong */
+    private suspend fun watchCaptcha(ctx: Context, apiUrl: String, token: String) {
+        while (true) {
+            delay(CAPTCHA_POLL_MS)
+            val active = OwoTrackerApi.fetchCaptchaActive(apiUrl, token)
+            if (active == true) {
+                handleCaptcha(ctx)
+                job?.cancel()
+                job = null
+                return
+            }
+        }
+    }
+
     private suspend fun CoroutineScope.runFarm(service: AutoAccessibilityService) {
+        val ctx = service.applicationContext
+        val first = OwoTrackerPrefs.load(ctx)
+        val watcher = launch { watchCaptcha(ctx, first.apiUrl, first.token) }
+        try {
+            runLoop(service)
+        } finally {
+            watcher.cancel()
+        }
+    }
+
+    private suspend fun CoroutineScope.runLoop(service: AutoAccessibilityService) {
         val ctx = service.applicationContext
         var settings = OwoTrackerPrefs.load(ctx)
         if (settings.apiUrl.isBlank() || settings.token.isBlank()) {
@@ -199,6 +244,12 @@ object FarmController {
                 running = true, status = "Đang chuẩn bị…", hunts = 0, battles = 0,
                 sessionStartIso = startIso, sessionNewPets = emptyList(), alert = null
             )
+        }
+
+        // Dang co canh bao captcha chua giai -> khong gõ them lenh nao
+        if (OwoTrackerApi.fetchCaptchaActive(settings.apiUrl, settings.token) == true) {
+            finish("🚨 OwO đang đòi captcha. Giải xong gõ ,captcha clear (trong kênh Discord) rồi bấm Bắt đầu lại", alert = true)
+            return
         }
 
         // --- 1. Tim kenh duoc chi dinh ---
@@ -236,7 +287,7 @@ object FarmController {
         val zooSentAt = System.currentTimeMillis()
         val zooResult = sendCommand(sender, settings, ZOO_COMMAND)
         if (zooResult == SendResult.CAPTCHA) {
-            finish("⚠️ OwO đòi captcha — đã dừng. Giải captcha rồi bấm Bắt đầu lại", alert = true)
+            handleCaptcha(ctx)
             return
         }
         if (zooResult == SendResult.OK) {
@@ -268,7 +319,7 @@ object FarmController {
             update { it.copy(status = "Đang farm…") }
             val huntResult = sendCommand(sender, settings, HUNT_COMMAND)
             if (huntResult == SendResult.CAPTCHA) {
-                finish("⚠️ OwO đòi captcha — đã dừng. Giải captcha rồi bấm Bắt đầu lại", alert = true)
+                handleCaptcha(ctx)
                 return
             }
             if (huntResult == SendResult.OK) {
@@ -290,7 +341,7 @@ object FarmController {
             // battle
             val battleResult = sendCommand(sender, settings, BATTLE_COMMAND)
             if (battleResult == SendResult.CAPTCHA) {
-                finish("⚠️ OwO đòi captcha — đã dừng. Giải captcha rồi bấm Bắt đầu lại", alert = true)
+                handleCaptcha(ctx)
                 return
             }
             if (battleResult == SendResult.OK) {

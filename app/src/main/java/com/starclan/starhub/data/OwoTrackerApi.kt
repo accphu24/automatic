@@ -20,6 +20,10 @@ data class PendingCommand(
 
 private data class PendingCommandsResponse(val commands: List<PendingCommand> = emptyList())
 
+/** GET /alerts — canh bao nhe, goi thuong xuyen luc dang farm */
+private data class CaptchaInfo(val active: Boolean? = null)
+private data class AlertsResponse(val captcha: CaptchaInfo? = null)
+
 /** Ket qua goi GET /hub — tach ro thanh cong / that bai de man hinh Hub bao loi cho de hieu. */
 sealed class HubResult {
     data class Success(val hub: HubResponse) : HubResult()
@@ -94,6 +98,29 @@ object OwoTrackerApi {
         } catch (e: Exception) {
             Log.w(TAG, "fetchHub loi: ${e.message}")
             HubResult.Failure("Không kết nối được tới bot — kiểm tra mạng và địa chỉ API")
+        }
+    }
+
+    /**
+     * OwO co dang doi captcha khong (bot doc tin canh bao trong kenh)?
+     * true = dang doi, false = khong, null = khong hoi duoc (mang loi / bot chua cap nhat) -> coi nhu chua biet.
+     */
+    suspend fun fetchCaptchaActive(apiUrl: String, token: String): Boolean? = withContext(Dispatchers.IO) {
+        try {
+            val url = URL(joinUrl(apiUrl, "/alerts"))
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "GET"
+            conn.setRequestProperty("Authorization", "Bearer $token")
+            conn.connectTimeout = 6_000
+            conn.readTimeout = 6_000
+            if (conn.responseCode != 200) {
+                return@withContext null
+            }
+            val body = conn.inputStream.bufferedReader().readText()
+            gson.fromJson(body, AlertsResponse::class.java)?.captcha?.active
+        } catch (e: Exception) {
+            Log.w(TAG, "fetchCaptchaActive loi: ${e.message}")
+            null
         }
     }
 
