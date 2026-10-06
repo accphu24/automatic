@@ -104,10 +104,16 @@ object FarmController {
     private val SACRIFICE_COMMANDS: List<String> = listOf("owo sc all")
     private const val SACRIFICE_GAP_MS = 3 * 3_600_000L
     private const val SACRIFICE_FIRST_DELAY_MS = 30 * 60_000L   // lan dau sau khi bat dau 30 phut
-    // Chi so huntbot de nang cap: efficiency, gain, duration, cost, experience, radar.
-    // De trong = khong tu nang cap. Co nhieu chi so thi nang lan luot tung chi so moi lan hien te.
-    private val UPGRADE_TRAITS: List<String> = emptyList()
+    // Nang cap huntbot tu dong theo huong dan cua Ruby (bot doc cap do tung chi so tu `owo hb`):
+    //  1. cost (toi da cap 5) -> 2. efficiency va gain nang DEU nhau (toi da 215 / 200)
+    //  -> 3. experience (200) -> 4. duration (235) -> 5. radar (999)
+    private const val UPGRADE_ENABLED = true
     private const val UPGRADE_GAP_MS = 3 * 3_600_000L
+    private const val TRAITS_REFRESH_GAP_MS = 30 * 60_000L
+    private val TRAIT_MAX = mapOf(
+        "cost" to 5, "efficiency" to 215, "gain" to 200,
+        "experience" to 200, "duration" to 235, "radar" to 999
+    )
 
     // Phuc hoi / canh gac
     private const val MAX_FAILS_IN_ROW = 6        // go loi 6 lan lien tiep -> dung han
@@ -136,7 +142,6 @@ object FarmController {
     private var unreachableSinceMs = 0L
 
     private val choreAt = mutableMapOf<String, Long>()
-    private var upgradeIndex = 0
 
     fun isRunning(): Boolean = job?.isActive == true
 
@@ -349,6 +354,30 @@ object FarmController {
         }
     }
 
+    /** Chon chi so huntbot nen nang tiep theo (null = khong biet cap do hoac da toi da het) */
+    private fun pickUpgradeTrait(traits: Map<String, Int>?): String? {
+        if (traits == null || traits.isEmpty()) return null
+        fun below(t: String): Boolean {
+            val level = traits[t] ?: return false
+            return level < (TRAIT_MAX[t] ?: Int.MAX_VALUE)
+        }
+        if (below("cost")) return "cost"
+        val effBelow = below("efficiency")
+        val gainBelow = below("gain")
+        if (effBelow && gainBelow) {
+            // nang deu: ben nao con thap hon (theo ti le tren cap toi da) thi nang truoc
+            val e = (traits["efficiency"] ?: 0).toDouble() / 215.0
+            val g = (traits["gain"] ?: 0).toDouble() / 200.0
+            return if (e <= g) "efficiency" else "gain"
+        }
+        if (effBelow) return "efficiency"
+        if (gainBelow) return "gain"
+        if (below("experience")) return "experience"
+        if (below("duration")) return "duration"
+        if (below("radar")) return "radar"
+        return null
+    }
+
     private fun choreDue(key: String, gapMs: Long): Boolean {
         val last = choreAt[key] ?: 0L
         return System.currentTimeMillis() - last >= gapMs
@@ -419,12 +448,23 @@ object FarmController {
             return r
         }
 
-        // Nang cap huntbot bang het essence
-        if (UPGRADE_TRAITS.isNotEmpty() && choreDue("upgrade", UPGRADE_GAP_MS)) {
-            val trait = UPGRADE_TRAITS[upgradeIndex % UPGRADE_TRAITS.size]
-            val r = runChoreCommands(sender, settings, "upgrade", listOf("owo upg $trait all"))
-            if (r == SendResult.OK) upgradeIndex++
-            return r
+        // Nang cap huntbot bang het essence (chon chi so theo cap do bot doc duoc)
+        if (UPGRADE_ENABLED) {
+            val traits = hub?.huntbot?.traits
+            if (traits == null) {
+                // Chua biet cap do cac chi so -> go owo hb 1 lan de bot doc (an toan, chi xem thong tin)
+                if (choreDue("traits_refresh", TRAITS_REFRESH_GAP_MS)) {
+                    return runChoreCommands(sender, settings, "traits_refresh", listOf(HUNTBOT_COLLECT_COMMAND))
+                }
+            } else if (choreDue("upgrade", UPGRADE_GAP_MS)) {
+                val trait = pickUpgradeTrait(traits)
+                if (trait == null) {
+                    choreAt["upgrade"] = System.currentTimeMillis()   // da toi da het, khong lam gi
+                } else {
+                    // go owo hb sau khi nang cap de bot cap nhat cap do + essence moi
+                    return runChoreCommands(sender, settings, "upgrade", listOf("owo upg $trait all", HUNTBOT_COLLECT_COMMAND))
+                }
+            }
         }
 
         if (choreDue("quest", QUEST_GAP_MS)) {

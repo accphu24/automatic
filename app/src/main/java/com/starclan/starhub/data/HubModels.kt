@@ -146,6 +146,8 @@ data class HubHuntbot(
     @SerializedName("time_remaining_text") val timeRemainingText: String? = null,
     @SerializedName("ready_at") val readyAt: String? = null,
     @SerializedName("seconds_left") val secondsLeft: Long? = null,
+    /** Cap do cac chi so huntbot: efficiency, duration, cost, gain, experience, radar */
+    val traits: Map<String, Int>? = null,
     @SerializedName("age_seconds") val ageSeconds: Long? = null
 )
 
