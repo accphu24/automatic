@@ -94,13 +94,19 @@ object FarmController {
     private const val DAILY_UNKNOWN_GAP_MS = 6 * 3_600_000L // chua co du lieu daily: thu 1 lan roi cho 6 gio
     private const val QUEST_GAP_MS = 60 * 60_000L          // lam moi bang quest moi 60 phut
 
-    // Cac viec duoi day TAT (danh sach rong) cho den khi Ruby cho biet dung lenh.
-    // Moi phan tu la 1 lenh se go lan luot. Vi du: listOf("owo hb")
-    private val HUNTBOT_COMMANDS: List<String> = emptyList()
-    private val SACRIFICE_COMMANDS: List<String> = emptyList()
-    private val UPGRADE_COMMANDS: List<String> = emptyList()
-    private const val HUNTBOT_GAP_MS = 20 * 60_000L
+    // Huntbot: app chi NHAN thanh qua (owo hb) khi da xong. App KHONG tu chay lai huntbot vi
+    // lenh khoi dong can mat khau xac minh dang hinh (kieu captcha) -> Ruby tu go, app nhac qua Discord.
+    private const val HUNTBOT_COLLECT_COMMAND = "owo hb"
+    private const val HUNTBOT_GAP_MS = 30 * 60_000L
+    private const val HUNTBOT_IDLE_NOTIFY_GAP_MS = 3 * 3_600_000L
+
+    // Hien te lay essence (Ruby chon owo sc all), roi nang cap huntbot bang het essence.
+    private val SACRIFICE_COMMANDS: List<String> = listOf("owo sc all")
     private const val SACRIFICE_GAP_MS = 3 * 3_600_000L
+    private const val SACRIFICE_FIRST_DELAY_MS = 30 * 60_000L   // lan dau sau khi bat dau 30 phut
+    // Chi so huntbot de nang cap: efficiency, gain, duration, cost, experience, radar.
+    // De trong = khong tu nang cap. Co nhieu chi so thi nang lan luot tung chi so moi lan hien te.
+    private val UPGRADE_TRAITS: List<String> = emptyList()
     private const val UPGRADE_GAP_MS = 3 * 3_600_000L
 
     // Phuc hoi / canh gac
@@ -130,6 +136,7 @@ object FarmController {
     private var unreachableSinceMs = 0L
 
     private val choreAt = mutableMapOf<String, Long>()
+    private var upgradeIndex = 0
 
     fun isRunning(): Boolean = job?.isActive == true
 
@@ -384,20 +391,40 @@ object FarmController {
             }
         }
 
-        if (HUNTBOT_COMMANDS.isNotEmpty() && choreDue("huntbot", HUNTBOT_GAP_MS)) {
-            val hb = hub?.huntbot
-            val ready = hb != null && (hb.hunting == false || (hb.secondsLeft != null && hb.secondsLeft <= 0L))
-            if (ready || hb == null) {
-                return runChoreCommands(sender, settings, "huntbot", HUNTBOT_COMMANDS)
+        // Huntbot: nhan thanh qua khi da xong, roi nhac Ruby tu chay lai (can mat khau xac minh)
+        val hb = hub?.huntbot
+        if (hb != null) {
+            val left = hb.secondsLeft
+            if (left != null && left <= 0L && choreDue("huntbot", HUNTBOT_GAP_MS)) {
+                val r = runChoreCommands(sender, settings, "huntbot", listOf(HUNTBOT_COLLECT_COMMAND))
+                if (r == SendResult.OK) {
+                    choreAt["huntbot_idle"] = System.currentTimeMillis()
+                    notifyOwner(
+                        "🤖 Huntbot đã chạy xong và app đã nhận thành quả (owo hb). " +
+                            "Bạn tự gõ `owo hb 24h` + mã xác nhận để chạy lại nhé — app không điền được mã này."
+                    )
+                }
+                return r
+            }
+            if (hb.hunting == false && choreDue("huntbot_idle", HUNTBOT_IDLE_NOTIFY_GAP_MS)) {
+                choreAt["huntbot_idle"] = System.currentTimeMillis()
+                notifyOwner("🤖 Huntbot đang không chạy. Bạn tự gõ `owo hb 24h` + mã xác nhận để chạy lại nhé.")
             }
         }
 
+        // Hien te lay essence
         if (SACRIFICE_COMMANDS.isNotEmpty() && choreDue("sacrifice", SACRIFICE_GAP_MS)) {
-            return runChoreCommands(sender, settings, "sacrifice", SACRIFICE_COMMANDS)
+            val r = runChoreCommands(sender, settings, "sacrifice", SACRIFICE_COMMANDS)
+            if (r == SendResult.OK) choreAt["upgrade"] = 0L   // co essence moi -> nang cap ngay vong sau
+            return r
         }
 
-        if (UPGRADE_COMMANDS.isNotEmpty() && choreDue("upgrade", UPGRADE_GAP_MS)) {
-            return runChoreCommands(sender, settings, "upgrade", UPGRADE_COMMANDS)
+        // Nang cap huntbot bang het essence
+        if (UPGRADE_TRAITS.isNotEmpty() && choreDue("upgrade", UPGRADE_GAP_MS)) {
+            val trait = UPGRADE_TRAITS[upgradeIndex % UPGRADE_TRAITS.size]
+            val r = runChoreCommands(sender, settings, "upgrade", listOf("owo upg $trait all"))
+            if (r == SendResult.OK) upgradeIndex++
+            return r
         }
 
         if (choreDue("quest", QUEST_GAP_MS)) {
@@ -472,6 +499,8 @@ object FarmController {
 
         val startIso = Instant.now().toString()
         choreAt.clear()
+        choreAt["sacrifice"] = System.currentTimeMillis() - SACRIFICE_GAP_MS + SACRIFICE_FIRST_DELAY_MS
+        choreAt["upgrade"] = System.currentTimeMillis()
         silentRecoverRequested = false
         lastSendOkAtMs = 0L
         silenceBaselineMs = System.currentTimeMillis()
