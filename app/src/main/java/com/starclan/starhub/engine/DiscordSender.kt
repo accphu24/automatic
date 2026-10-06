@@ -127,9 +127,10 @@ class DiscordSender(private val service: AutoAccessibilityService) {
      * @param reopenChannel true -> mo lai Discord/kenh truoc khi gui (dung cho lenh DAU TIEN cua moi dot).
      */
     suspend fun send(text: String, settings: OwoTrackerPrefs.Settings, reopenChannel: Boolean): SendResult =
-        sendMutex.withLock { sendLocked(text, settings, reopenChannel) }
+        sendMutex.withLock { sendWithoutLock(text, settings, reopenChannel) }
 
-    private suspend fun sendLocked(text: String, settings: OwoTrackerPrefs.Settings, reopenChannel: Boolean): SendResult {
+    /** Giong send() nhung KHONG tu lay khoa: chi goi khi da giu DiscordSender.sendMutex (vd go lenh roi bam nut lien tiep) */
+    suspend fun sendWithoutLock(text: String, settings: OwoTrackerPrefs.Settings, reopenChannel: Boolean): SendResult {
         if (reopenChannel || foregroundPackage() != DISCORD_PACKAGE) {
             if (!openDiscord(settings.discordLink)) return SendResult.DISCORD_NOT_OPEN
         }

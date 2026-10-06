@@ -92,7 +92,7 @@ object FarmController {
     // Viec vat
     private const val DAILY_GAP_MS = 30 * 60_000L          // da thay den gio nhan daily thi thu lai moi 30 phut
     private const val DAILY_UNKNOWN_GAP_MS = 6 * 3_600_000L // chua co du lieu daily: thu 1 lan roi cho 6 gio
-    private const val QUEST_GAP_MS = 60 * 60_000L          // lam moi bang quest moi 60 phut
+    private const val QUEST_CLAIM_GAP_MS = 30 * 60_000L    // moi 30 phut: mo Quest Log, nhan thuong nhiem vu da xong
 
     // Huntbot: app chi NHAN thanh qua (owo hb) khi da xong. App KHONG tu chay lai huntbot vi
     // lenh khoi dong can mat khau xac minh dang hinh (kieu captcha) -> Ruby tu go, app nhac qua Discord.
@@ -142,6 +142,7 @@ object FarmController {
     private var unreachableSinceMs = 0L
 
     private val choreAt = mutableMapOf<String, Long>()
+    private var questUiWarned = false
 
     fun isRunning(): Boolean = job?.isActive == true
 
@@ -404,7 +405,45 @@ object FarmController {
      * Moi vong lam toi da 1 viec vat, theo du lieu bot doc duoc (bot la "mat"):
      * daily khi den gio, lam moi quest, va (neu Ruby da cho lenh) huntbot / hien te / nang cap.
      */
-    private suspend fun runOneChore(sender: DiscordSender, settings: OwoTrackerPrefs.Settings): SendResult {
+    /** Go owo quest, doi Quest Log hien, roi bam nut nhan thuong o tab Daily / Weekly / Quests neu da xong */
+    private suspend fun claimQuests(
+        service: AutoAccessibilityService,
+        sender: DiscordSender,
+        settings: OwoTrackerPrefs.Settings
+    ): SendResult {
+        choreAt["quest"] = System.currentTimeMillis()
+        update { it.copy(status = "Kiểm tra nhiệm vụ…", lastCommand = QUEST_COMMAND) }
+        return DiscordSender.sendMutex.withLock {
+            val r = try {
+                sender.sendWithoutLock(QUEST_COMMAND, settings, false)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Gui owo quest loi: ${e.message}")
+                SendResult.SEND_FAILED
+            }
+            if (r == SendResult.OK) {
+                lastSendOkAtMs = System.currentTimeMillis()
+                delay(4_000)
+                val res = QuestClaimer.claimAll(service)
+                if (res.claimed.isNotEmpty()) {
+                    update { it.copy(alert = "🎁 Đã nhận thưởng nhiệm vụ: " + res.claimed.joinToString(", ")) }
+                } else if (res.tabsFound == 0 && !questUiWarned) {
+                    questUiWarned = true
+                    update {
+                        it.copy(alert = "⚠️ Không thấy các nút trong Quest Log trên màn hình (Discord có thể không cho app đọc nút). Nhận thưởng nhiệm vụ cần bấm tay")
+                    }
+                }
+            }
+            r
+        }
+    }
+
+    private suspend fun runOneChore(
+        service: AutoAccessibilityService,
+        sender: DiscordSender,
+        settings: OwoTrackerPrefs.Settings
+    ): SendResult {
         val hub = _state.value.hub
 
         val daily = hub?.daily
@@ -467,8 +506,8 @@ object FarmController {
             }
         }
 
-        if (choreDue("quest", QUEST_GAP_MS)) {
-            return runChoreCommands(sender, settings, "quest", listOf(QUEST_COMMAND))
+        if (choreDue("quest", QUEST_CLAIM_GAP_MS)) {
+            return claimQuests(service, sender, settings)
         }
         return SendResult.OK
     }
@@ -542,6 +581,7 @@ object FarmController {
         choreAt["sacrifice"] = System.currentTimeMillis() - SACRIFICE_GAP_MS + SACRIFICE_FIRST_DELAY_MS
         choreAt["upgrade"] = System.currentTimeMillis()
         silentRecoverRequested = false
+        questUiWarned = false
         lastSendOkAtMs = 0L
         silenceBaselineMs = System.currentTimeMillis()
         update {
@@ -660,7 +700,7 @@ object FarmController {
 
             // 4.4 Viec vat (toi da 1 viec / vong)
             update { it.copy(status = "Đang farm…") }
-            val choreResult = runOneChore(sender, settings)
+            val choreResult = runOneChore(service, sender, settings)
             if (choreResult == SendResult.CAPTCHA) {
                 handleCaptcha(ctx)
                 return
