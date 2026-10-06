@@ -3,6 +3,7 @@ package com.starclan.starhub.data
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonParseException
+import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
@@ -22,7 +23,18 @@ private data class PendingCommandsResponse(val commands: List<PendingCommand> = 
 
 /** GET /alerts — canh bao nhe, goi thuong xuyen luc dang farm */
 private data class CaptchaInfo(val active: Boolean? = null)
-private data class AlertsResponse(val captcha: CaptchaInfo? = null)
+private data class ActivityInfo(
+    @SerializedName("last_reply_age_seconds") val lastReplyAgeSeconds: Long? = null,
+    @SerializedName("last_command_age_seconds") val lastCommandAgeSeconds: Long? = null
+)
+private data class AlertsResponse(val captcha: CaptchaInfo? = null, val activity: ActivityInfo? = null)
+
+/** Ket qua hoi bot: OwO co dang doi captcha khong, va OwO tra loi lenh gan nhat cach day bao lau */
+data class AlertInfo(
+    val captchaActive: Boolean,
+    val lastReplyAgeSeconds: Long?,
+    val lastCommandAgeSeconds: Long?
+)
 
 /** Ket qua goi GET /hub — tach ro thanh cong / that bai de man hinh Hub bao loi cho de hieu. */
 sealed class HubResult {
@@ -102,12 +114,14 @@ object OwoTrackerApi {
     }
 
     /**
-     * OwO co dang doi captcha khong (bot doc tin canh bao trong kenh)?
-     * true = dang doi, false = khong, null = khong hoi duoc (mang loi / bot chua cap nhat) -> coi nhu chua biet.
+     * Hoi bot (GET /alerts). farmFlag: "1" = dang farm, "2" = dang nghi giai lao, "0" = vua dung farm,
+     * null = chi hoi. Bot dung co nay de canh: mat ket noi dien thoai / OwO im lang thi nhan tin tag Ruby.
+     * Tra ve null neu khong hoi duoc (mang loi / bot chua cap nhat).
      */
-    suspend fun fetchCaptchaActive(apiUrl: String, token: String): Boolean? = withContext(Dispatchers.IO) {
+    suspend fun fetchAlerts(apiUrl: String, token: String, farmFlag: String?): AlertInfo? = withContext(Dispatchers.IO) {
         try {
-            val url = URL(joinUrl(apiUrl, "/alerts"))
+            val query = if (farmFlag == null) "" else "?farm=$farmFlag"
+            val url = URL(joinUrl(apiUrl, "/alerts$query"))
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "GET"
             conn.setRequestProperty("Authorization", "Bearer $token")
@@ -117,10 +131,38 @@ object OwoTrackerApi {
                 return@withContext null
             }
             val body = conn.inputStream.bufferedReader().readText()
-            gson.fromJson(body, AlertsResponse::class.java)?.captcha?.active
+            val parsed = gson.fromJson(body, AlertsResponse::class.java) ?: return@withContext null
+            AlertInfo(
+                captchaActive = parsed.captcha?.active == true,
+                lastReplyAgeSeconds = parsed.activity?.lastReplyAgeSeconds,
+                lastCommandAgeSeconds = parsed.activity?.lastCommandAgeSeconds
+            )
         } catch (e: Exception) {
-            Log.w(TAG, "fetchCaptchaActive loi: ${e.message}")
+            Log.w(TAG, "fetchAlerts loi: ${e.message}")
             null
+        }
+    }
+
+    /** Chi hoi captcha: true/false, null = khong hoi duoc */
+    suspend fun fetchCaptchaActive(apiUrl: String, token: String): Boolean? =
+        fetchAlerts(apiUrl, token, null)?.captchaActive
+
+    /** Nho bot nhan tin tag Ruby tren Discord (de dien thoai/may khac cung bao) */
+    suspend fun notify(apiUrl: String, token: String, text: String) = withContext(Dispatchers.IO) {
+        try {
+            val url = URL(joinUrl(apiUrl, "/notify"))
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "POST"
+            conn.setRequestProperty("Authorization", "Bearer $token")
+            conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+            conn.doOutput = true
+            conn.connectTimeout = 8_000
+            conn.readTimeout = 8_000
+            val payload = gson.toJson(mapOf("text" to text))
+            conn.outputStream.use { it.write(payload.toByteArray(Charsets.UTF_8)) }
+            conn.responseCode
+        } catch (e: Exception) {
+            Log.w(TAG, "notify loi: ${e.message}")
         }
     }
 

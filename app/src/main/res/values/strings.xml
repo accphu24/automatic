@@ -18,6 +18,9 @@
     <string name="btn_test_open_discord">▶️ Thử mở Discord</string>
     <string name="btn_toggle_hub">⭐ Bật / tắt Hub nổi &amp; farm</string>
     <string name="note_toggle_hub">Hiện bong bóng ngôi sao trên màn hình. Chạm để mở bảng: gem, chuỗi battle, zoo, pet mới và nút Bắt đầu / Dừng farm. Kênh farm lấy từ bot (lệnh ,setchannel), không cần dán link.</string>
+    <string name="btn_battery_settings">🔋 Tắt tối ưu pin cho Star Hub</string>
+    <string name="note_battery_settings">Treo lâu thì nên chọn "Tất cả ứng dụng" → Star Hub → "Không tối ưu hóa" để Android không tự tắt Accessibility. Nên cắm sạc khi treo. Khi farm, Hub nổi tự giữ màn hình luôn sáng.</string>
+    <string name="toast_battery_settings_failed">Không mở được cài đặt pin, bạn vào Cài đặt Android → Pin → Star Hub nhé</string>
     <string name="toast_testing_open_discord">Đang mở Discord…</string>
     <string name="result_open_ok_channel">✅ Đã mở Discord và vào đúng kênh theo link</string>
     <string name="result_open_ok_app">✅ Đã mở Discord (chưa có link kênh nên chỉ mở app)</string>

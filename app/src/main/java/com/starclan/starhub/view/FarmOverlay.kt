@@ -46,6 +46,7 @@ object FarmOverlay {
     private var tvPets: TextView? = null
     private var btnToggle: Button? = null
     private var btnMute: Button? = null
+    private var keepingScreenOn = false
     private var scope: CoroutineScope? = null
     private var refreshJob: Job? = null
 
@@ -69,6 +70,7 @@ object FarmOverlay {
         params = null
         panel = null
         windowManager = null
+        keepingScreenOn = false
     }
 
     fun show(service: AutoAccessibilityService) {
@@ -284,6 +286,20 @@ object FarmOverlay {
         tvStatus?.text = head + running + last
         btnToggle?.text = if (st.running) "⏹ Dừng" else "▶ Bắt đầu"
         btnMute?.visibility = if (st.ringing) View.VISIBLE else View.GONE
+
+        // Dang farm thi giu man hinh luon sang (tat man hinh la app khong go duoc nua)
+        if (st.running != keepingScreenOn) {
+            keepingScreenOn = st.running
+            val lp = params
+            if (lp != null) {
+                lp.flags = if (keepingScreenOn) {
+                    lp.flags or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                } else {
+                    lp.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON.inv()
+                }
+                relayout()
+            }
+        }
 
         val alertText = st.alert
         if (alertText.isNullOrBlank()) {

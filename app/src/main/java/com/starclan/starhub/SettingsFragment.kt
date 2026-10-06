@@ -1,5 +1,6 @@
 package com.starclan.starhub
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -63,6 +64,14 @@ class SettingsFragment : Fragment() {
                     if (_binding != null) updateTargetsStatusText(true)
                     Toast.makeText(requireContext(), getString(R.string.toast_targets_saved), Toast.LENGTH_SHORT).show()
                 }
+            }
+        }
+
+        binding.btnBatterySettings.setOnClickListener {
+            try {
+                startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), getString(R.string.toast_battery_settings_failed), Toast.LENGTH_LONG).show()
             }
         }
 
