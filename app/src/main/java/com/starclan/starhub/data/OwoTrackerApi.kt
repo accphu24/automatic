@@ -148,7 +148,7 @@ object OwoTrackerApi {
         fetchAlerts(apiUrl, token, null)?.captchaActive
 
     /** Nho bot nhan tin tag Ruby tren Discord (de dien thoai/may khac cung bao) */
-    suspend fun notify(apiUrl: String, token: String, text: String) = withContext(Dispatchers.IO) {
+    suspend fun notify(apiUrl: String, token: String, text: String, toAlt: Boolean = false) = withContext(Dispatchers.IO) {
         try {
             val url = URL(joinUrl(apiUrl, "/notify"))
             val conn = url.openConnection() as HttpURLConnection
@@ -158,7 +158,9 @@ object OwoTrackerApi {
             conn.doOutput = true
             conn.connectTimeout = 8_000
             conn.readTimeout = 8_000
-            val payload = gson.toJson(mapOf("text" to text))
+            val body = mutableMapOf("text" to text)
+            if (toAlt) body["target"] = "alt"
+            val payload = gson.toJson(body)
             conn.outputStream.use { it.write(payload.toByteArray(Charsets.UTF_8)) }
             conn.responseCode
         } catch (e: Exception) {

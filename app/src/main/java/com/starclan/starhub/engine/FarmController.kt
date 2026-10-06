@@ -176,13 +176,13 @@ object FarmController {
         }
     }
 
-    /** Nho bot nhan tin TAG Ruby tren Discord */
-    private fun notifyOwner(text: String) {
+    /** Nho bot nhan tin TAG Ruby tren Discord (toAlt = gui DM vao acc phu cua Ruby) */
+    private fun notifyOwner(text: String, toAlt: Boolean = false) {
         val ctx = appCtx ?: return
         scope.launch {
             val s = OwoTrackerPrefs.load(ctx)
             if (s.apiUrl.isNotBlank() && s.token.isNotBlank()) {
-                OwoTrackerApi.notify(s.apiUrl, s.token, text)
+                OwoTrackerApi.notify(s.apiUrl, s.token, text, toAlt)
             }
         }
     }
@@ -469,14 +469,15 @@ object FarmController {
                     choreAt["huntbot_idle"] = System.currentTimeMillis()
                     notifyOwner(
                         "🤖 Huntbot đã chạy xong và app đã nhận thành quả (owo hb). " +
-                            "Bạn tự gõ `owo hb 24h` + mã xác nhận để chạy lại nhé — app không điền được mã này."
+                            "Bạn tự gõ `owo hb 24h` + mã xác nhận để chạy lại nhé — app không điền được mã này.",
+                        toAlt = true
                     )
                 }
                 return r
             }
             if (hb.hunting == false && choreDue("huntbot_idle", HUNTBOT_IDLE_NOTIFY_GAP_MS)) {
                 choreAt["huntbot_idle"] = System.currentTimeMillis()
-                notifyOwner("🤖 Huntbot đang không chạy. Bạn tự gõ `owo hb 24h` + mã xác nhận để chạy lại nhé.")
+                notifyOwner("🤖 Huntbot đang không chạy. Bạn tự gõ `owo hb 24h` + mã xác nhận để chạy lại nhé.", toAlt = true)
             }
         }
 
