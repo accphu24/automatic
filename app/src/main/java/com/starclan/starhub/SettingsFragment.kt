@@ -1,5 +1,8 @@
 package com.starclan.starhub
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -14,11 +17,13 @@ import androidx.fragment.app.Fragment
 import com.starclan.starhub.data.OwoTrackerPrefs
 import com.starclan.starhub.databinding.FragmentSettingsBinding
 import com.starclan.starhub.engine.DiscordSender
+import com.starclan.starhub.engine.NodeDump
 import com.starclan.starhub.engine.OpenResult
 import com.starclan.starhub.service.AutoAccessibilityService
 import com.starclan.starhub.view.FarmOverlay
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -63,6 +68,25 @@ class SettingsFragment : Fragment() {
                 activity?.runOnUiThread {
                     if (_binding != null) updateTargetsStatusText(true)
                     Toast.makeText(requireContext(), getString(R.string.toast_targets_saved), Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        binding.btnDumpScreen.setOnClickListener {
+            val service = AutoAccessibilityService.instance
+            if (service == null) {
+                Toast.makeText(requireContext(), getString(R.string.toast_service_not_enabled), Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val appContext = requireContext().applicationContext
+            Toast.makeText(appContext, appContext.getString(R.string.toast_dump_waiting), Toast.LENGTH_LONG).show()
+            CoroutineScope(Dispatchers.Default).launch {
+                delay(8_000)
+                val text = NodeDump.dump(service)
+                Handler(Looper.getMainLooper()).post {
+                    val cm = appContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    cm.setPrimaryClip(ClipData.newPlainText("starhub-dump", text))
+                    Toast.makeText(appContext, appContext.getString(R.string.toast_dump_done), Toast.LENGTH_LONG).show()
                 }
             }
         }

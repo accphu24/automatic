@@ -21,6 +21,10 @@
     <string name="btn_battery_settings">🔋 Tắt tối ưu pin cho Star Hub</string>
     <string name="note_battery_settings">Treo lâu thì nên chọn "Tất cả ứng dụng" → Star Hub → "Không tối ưu hóa" để Android không tự tắt Accessibility. Nên cắm sạc khi treo. Khi farm, Hub nổi tự giữ màn hình luôn sáng.</string>
     <string name="toast_battery_settings_failed">Không mở được cài đặt pin, bạn vào Cài đặt Android → Pin → Star Hub nhé</string>
+    <string name="btn_dump_screen">📋 Chụp cấu trúc màn hình (gửi cho Claude)</string>
+    <string name="note_dump_screen">Bấm nút, rồi chuyển sang Discord và mở Quest Log. Sau 8 giây app chép cấu trúc nút trên màn hình vào bộ nhớ tạm. Bạn dán vào chat cho Claude. Có thể chứa chữ đang hiện trên màn hình.</string>
+    <string name="toast_dump_waiting">Chuyển sang Discord, mở màn hình cần chụp. Sau 8 giây app sẽ chụp</string>
+    <string name="toast_dump_done">Đã chép vào bộ nhớ tạm. Dán cho Claude nhé</string>
     <string name="toast_testing_open_discord">Đang mở Discord…</string>
     <string name="result_open_ok_channel">✅ Đã mở Discord và vào đúng kênh theo link</string>
     <string name="result_open_ok_app">✅ Đã mở Discord (chưa có link kênh nên chỉ mở app)</string>

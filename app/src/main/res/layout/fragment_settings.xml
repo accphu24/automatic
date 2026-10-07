@@ -173,6 +173,21 @@
                     android:text="@string/note_battery_settings"
                     android:textSize="11sp" />
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDumpScreen"
+                    style="@style/Widget.AutoMacro.Button.Outlined"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/btn_dump_screen" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/note_dump_screen"
+                    android:textSize="11sp" />
+
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"

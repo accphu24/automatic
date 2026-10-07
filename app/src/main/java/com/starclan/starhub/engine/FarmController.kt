@@ -110,6 +110,11 @@ object FarmController {
     private const val HUNTBOT_GAP_MS = 30 * 60_000L
     private const val HUNTBOT_IDLE_NOTIFY_GAP_MS = 3 * 3_600_000L
 
+    // Mo hop dinh ky: lootbox, weapon crate, bcrate (owo bwc all do Ruby cung cap; owo lb all / owo wc all la lenh chuan cua OwO)
+    private val OPEN_BOXES_COMMANDS: List<String> = listOf("owo lb all", "owo wc all", "owo bwc all")
+    private const val OPEN_BOXES_GAP_MS = 60 * 60_000L
+    private const val OPEN_BOXES_FIRST_DELAY_MS = 5 * 60_000L
+
     // Hien te lay essence (Ruby chon owo sc all), roi nang cap huntbot bang het essence.
     private val SACRIFICE_COMMANDS: List<String> = listOf("owo sc all")
     private const val SACRIFICE_GAP_MS = 3 * 3_600_000L
@@ -550,6 +555,11 @@ object FarmController {
             }
         }
 
+        // Mo lootbox / crate / bcrate dinh ky
+        if (OPEN_BOXES_COMMANDS.isNotEmpty() && choreDue("open_boxes", OPEN_BOXES_GAP_MS)) {
+            return runChoreCommands(sender, settings, "open_boxes", OPEN_BOXES_COMMANDS)
+        }
+
         // Hien te lay essence
         if (SACRIFICE_COMMANDS.isNotEmpty() && choreDue("sacrifice", SACRIFICE_GAP_MS)) {
             val r = runChoreCommands(sender, settings, "sacrifice", SACRIFICE_COMMANDS)
@@ -659,6 +669,7 @@ object FarmController {
         choreAt.clear()
         choreAt["sacrifice"] = System.currentTimeMillis() - SACRIFICE_GAP_MS + SACRIFICE_FIRST_DELAY_MS
         choreAt["upgrade"] = System.currentTimeMillis()
+        choreAt["open_boxes"] = System.currentTimeMillis() - OPEN_BOXES_GAP_MS + OPEN_BOXES_FIRST_DELAY_MS
         silentRecoverRequested = false
         questUiWarned = false
         lastSendOkAtMs = 0L
