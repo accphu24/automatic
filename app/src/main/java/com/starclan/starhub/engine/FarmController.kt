@@ -39,7 +39,11 @@ data class FarmState(
     /** Dang reo chuong */
     val ringing: Boolean = false,
     /** Dang nghi (giai lao / nghi theo phien / gio yen lang) - khong go lenh */
-    val resting: Boolean = false
+    val resting: Boolean = false,
+    /** Che do hunt: 1 = dung khi du lootbox hang ngay, 2 = dung khi thieu gem, 3 = khong dung */
+    val huntMode: Int = 3,
+    /** Ly do hunt dang tam dung (null = dang hunt binh thuong) */
+    val huntPaused: String? = null
 )
 
 /**
@@ -93,6 +97,12 @@ object FarmController {
     private const val DAILY_GAP_MS = 30 * 60_000L          // da thay den gio nhan daily thi thu lai moi 30 phut
     private const val DAILY_UNKNOWN_GAP_MS = 6 * 3_600_000L // chua co du lieu daily: thu 1 lan roi cho 6 gio
     private const val QUEST_CLAIM_GAP_MS = 30 * 60_000L    // moi 30 phut: mo Quest Log, nhan thuong nhiem vu da xong
+    private const val QUEST_CLAIM_GAP_MODE1_MS = 10 * 60_000L // che do hunt 1: kiem tra lootbox thuong xuyen hon
+
+    // Che do hunt (Ruby chon tren Hub noi, luu lai cho lan sau)
+    private const val PREFS_NAME = "star_farm"
+    private const val KEY_HUNT_MODE = "hunt_mode"
+    private val REQUIRED_GEM_SLOTS = setOf("1", "3", "4")   // 3 slot gem thuong ngay
 
     // Huntbot: app chi NHAN thanh qua (owo hb) khi da xong. App KHONG tu chay lai huntbot vi
     // lenh khoi dong can mat khau xac minh dang hinh (kieu captcha) -> Ruby tu go, app nhac qua Discord.
@@ -215,6 +225,7 @@ object FarmController {
     fun start(service: AutoAccessibilityService) {
         if (isRunning()) return
         appCtx = service.applicationContext
+        loadHuntMode(service.applicationContext)
         stopAlarm()
         job = scope.launch {
             try {
@@ -379,6 +390,64 @@ object FarmController {
         return null
     }
 
+    /** Doc che do hunt da luu (mac dinh 3 = khong dung) va dua vao trang thai */
+    fun loadHuntMode(context: Context) {
+        val mode = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getInt(KEY_HUNT_MODE, 3)
+        update { it.copy(huntMode = if (mode in 1..3) mode else 3) }
+    }
+
+    /** Bam nut tren Hub noi: doi qua lai che do 1 -> 2 -> 3 -> 1 */
+    fun cycleHuntMode(context: Context) {
+        val next = when (_state.value.huntMode) {
+            1 -> 2
+            2 -> 3
+            else -> 1
+        }
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putInt(KEY_HUNT_MODE, next).apply()
+        update { it.copy(huntMode = next, huntPaused = huntPauseReason(it.hub, next)) }
+    }
+
+    /**
+     * Hunt co nen TAM DUNG khong (battle va viec vat van chay)? Tra ve ly do, hoac null = cu hunt.
+     *  Che do 1: dung khi checklist Daily da du lootbox (vd 3/3) — het ngay (reset) thi hunt lai.
+     *  Che do 2: dung khi gem dang dung it hon 3 VA trong kho khong con loai gem dang thieu.
+     *  Che do 3: khong bao gio dung.
+     */
+    private fun huntPauseReason(hub: HubResponse?, mode: Int): String? {
+        if (hub == null) return null
+        when (mode) {
+            1 -> {
+                val daily = hub.checklists?.daily ?: return null
+                val item = daily.items.orEmpty().firstOrNull { (it.name ?: "").lowercase().contains("lootbox") }
+                    ?: return null
+                val resets = daily.resetsAtEpoch
+                val stale = resets != null && System.currentTimeMillis() / 1000 >= resets
+                if (item.done == true && !stale) {
+                    return "Mode 1: đã đủ lootbox hôm nay (${item.cur ?: "?"}/${item.max ?: "?"})"
+                }
+                return null
+            }
+            2 -> {
+                val gems = hub.gems ?: return null
+                val equipped = gems.equipped.orEmpty()
+                if (equipped.isEmpty()) return null   // chua co du lieu gem -> khong dung
+                val equippedSlots = equipped.mapNotNull { it.slot }.toSet()
+                if (equippedSlots.size >= 3) return null
+                val spareSlots = gems.spare.orEmpty()
+                    .filter { (it.count ?: 0L) > 0L }
+                    .mapNotNull { it.slot }
+                    .toSet()
+                val missing = REQUIRED_GEM_SLOTS - equippedSlots
+                val noSpare = missing.filter { it !in spareSlots }
+                if (noSpare.isNotEmpty()) {
+                    return "Mode 2: thiếu gem slot ${noSpare.joinToString(", ")} và trong kho không còn"
+                }
+                return null
+            }
+            else -> return null
+        }
+    }
+
     private fun choreDue(key: String, gapMs: Long): Boolean {
         val last = choreAt[key] ?: 0L
         return System.currentTimeMillis() - last >= gapMs
@@ -507,7 +576,16 @@ object FarmController {
             }
         }
 
-        if (choreDue("quest", QUEST_CLAIM_GAP_MS)) {
+        // Che do hunt 1: sang ngay moi (checklist da reset) thi doc lai Quest Log ngay
+        val dailyResets = hub?.checklists?.daily?.resetsAtEpoch
+        if (_state.value.huntMode == 1 && dailyResets != null && System.currentTimeMillis() / 1000 >= dailyResets &&
+            choreDue("quest_reset", 5 * 60_000L)
+        ) {
+            choreAt["quest_reset"] = System.currentTimeMillis()
+            choreAt["quest"] = 0L
+        }
+        val questGap = if (_state.value.huntMode == 1) QUEST_CLAIM_GAP_MODE1_MS else QUEST_CLAIM_GAP_MS
+        if (choreDue("quest", questGap)) {
             return claimQuests(service, sender, settings)
         }
         return SendResult.OK
@@ -712,28 +790,33 @@ object FarmController {
                 delay(Random.nextLong(GAP_MIN_MS, GAP_MAX_MS))
             }
 
-            // 4.5 hunt
-            val huntResult = sendCommand(sender, settings, HUNT_COMMAND)
-            if (huntResult == SendResult.CAPTCHA) {
-                handleCaptcha(ctx)
-                return
-            }
-            if (huntResult == SendResult.OK) {
-                failsInRow = 0
-                update { it.copy(hunts = it.hunts + 1) }
-            } else {
-                failsInRow++
-                if (failsInRow >= MAX_FAILS_IN_ROW) {
-                    hardStop(ctx, "Gõ lệnh lỗi $failsInRow lần liên tiếp (${describeSend(huntResult)}) — đã dừng")
+            // 4.5 hunt (tuy che do hunt co the tam dung, battle van chay)
+            val pauseReason = huntPauseReason(_state.value.hub, _state.value.huntMode)
+            update { it.copy(huntPaused = pauseReason) }
+            if (pauseReason == null) {
+                val huntResult = sendCommand(sender, settings, HUNT_COMMAND)
+                if (huntResult == SendResult.CAPTCHA) {
+                    handleCaptcha(ctx)
                     return
                 }
-                update { it.copy(status = "Lỗi gõ lệnh (${describeSend(huntResult)}), lần $failsInRow — đang khắc phục…") }
-                if (failsInRow >= 2) reopenChannel(sender, link)
-                delay(minOf(4_000L * failsInRow, 30_000L))
-                continue
+                if (huntResult == SendResult.OK) {
+                    failsInRow = 0
+                    update { it.copy(hunts = it.hunts + 1) }
+                } else {
+                    failsInRow++
+                    if (failsInRow >= MAX_FAILS_IN_ROW) {
+                        hardStop(ctx, "Gõ lệnh lỗi $failsInRow lần liên tiếp (${describeSend(huntResult)}) — đã dừng")
+                        return
+                    }
+                    update { it.copy(status = "Lỗi gõ lệnh (${describeSend(huntResult)}), lần $failsInRow — đang khắc phục…") }
+                    if (failsInRow >= 2) reopenChannel(sender, link)
+                    delay(minOf(4_000L * failsInRow, 30_000L))
+                    continue
+                }
+                delay(Random.nextLong(GAP_MIN_MS, GAP_MAX_MS))
+            } else {
+                update { it.copy(status = "Hunt tạm dừng — $pauseReason") }
             }
-
-            delay(Random.nextLong(GAP_MIN_MS, GAP_MAX_MS))
 
             // 4.6 battle
             val battleResult = sendCommand(sender, settings, BATTLE_COMMAND)

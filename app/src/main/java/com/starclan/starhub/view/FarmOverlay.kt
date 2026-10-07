@@ -46,6 +46,7 @@ object FarmOverlay {
     private var tvPets: TextView? = null
     private var btnToggle: Button? = null
     private var btnMute: Button? = null
+    private var btnMode: Button? = null
     private var keepingScreenOn = false
     private var scope: CoroutineScope? = null
     private var refreshJob: Job? = null
@@ -152,6 +153,11 @@ object FarmOverlay {
         toggle.setAllCaps(false)
         toggle.textSize = 12f
         btnToggle = toggle
+        val modeBtn = Button(service)
+        modeBtn.text = "🎯 Hunt mode 3"
+        modeBtn.setAllCaps(false)
+        modeBtn.textSize = 12f
+        btnMode = modeBtn
         val muteBtn = Button(service)
         muteBtn.text = "🔕 Tắt chuông"
         muteBtn.setAllCaps(false)
@@ -180,6 +186,7 @@ object FarmOverlay {
         scroll.addView(content)
         val panelWidth = minOf(dp(290), screenW - dp(40))
         panelBox.addView(buttons, LinearLayout.LayoutParams(panelWidth, LinearLayout.LayoutParams.WRAP_CONTENT))
+        panelBox.addView(modeBtn, LinearLayout.LayoutParams(panelWidth, LinearLayout.LayoutParams.WRAP_CONTENT))
         panelBox.addView(scroll, LinearLayout.LayoutParams(panelWidth, (screenH * 0.42f).toInt()))
         container.addView(panelBox, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
@@ -194,6 +201,8 @@ object FarmOverlay {
             }
         }
         muteBtn.setOnClickListener { FarmController.stopAlarm() }
+        modeBtn.setOnClickListener { FarmController.cycleHuntMode(service.applicationContext) }
+        FarmController.loadHuntMode(service.applicationContext)
         closeBtn.setOnClickListener {
             FarmController.stop()
             hide()
@@ -283,7 +292,14 @@ object FarmOverlay {
         val head = if (st.running) "▶ Đang farm · hunt ${st.hunts} · battle ${st.battles}" else "⏸ ${st.status}"
         val last = if (st.running && st.lastCommand.isNotEmpty()) "\nLệnh gần nhất: ${st.lastCommand}" else ""
         val running = if (st.running) "\n${st.status}" else ""
-        tvStatus?.text = head + running + last
+        val paused = if (!st.huntPaused.isNullOrBlank()) "\n⏸ Hunt tạm dừng: ${st.huntPaused}" else ""
+        tvStatus?.text = head + running + last + paused
+        val modeDesc = when (st.huntMode) {
+            1 -> "dừng khi đủ lootbox ngày"
+            2 -> "dừng khi thiếu gem"
+            else -> "không dừng"
+        }
+        btnMode?.text = "🎯 Hunt mode ${st.huntMode}: $modeDesc (chạm để đổi)"
         btnToggle?.text = if (st.running) "⏹ Dừng" else "▶ Bắt đầu"
         btnMute?.visibility = if (st.ringing) View.VISIBLE else View.GONE
 

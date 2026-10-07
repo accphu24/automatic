@@ -45,6 +45,7 @@ object HubParser {
             battle = section("battle", HubBattle::class.java),
             newPets = section("new_pets", HubNewPets::class.java),
             channel = section("channel", HubChannel::class.java),
+            checklists = section("checklists", HubChecklists::class.java),
             sectionErrors = if (errors.isEmpty()) null else errors
         )
     }

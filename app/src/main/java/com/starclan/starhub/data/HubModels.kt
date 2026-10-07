@@ -24,6 +24,7 @@ data class HubResponse(
     val battle: HubBattle? = null,
     val newPets: HubNewPets? = null,
     val channel: HubChannel? = null,
+    val checklists: HubChecklists? = null,
     /** Muc nao khong doc duoc -> ten muc + ly do (vd "zoo" -> "Expected BEGIN_ARRAY..."). Cac muc con lai van hien binh thuong. */
     val sectionErrors: Map<String, String>? = null
 )
@@ -50,6 +51,30 @@ data class HubNewPet(
 )
 
 data class HubNewPets(val pets: List<HubNewPet>? = null)
+
+// ---- Checklist Daily / Weekly trong Quest Log (owo quest) ----
+data class HubChecklistItem(
+    val name: String? = null,
+    val cur: Int? = null,
+    val max: Int? = null,
+    val done: Boolean? = null
+)
+
+data class HubChecklistProgress(val cur: Int? = null, val max: Int? = null)
+
+data class HubChecklist(
+    val kind: String? = null,
+    val items: List<HubChecklistItem>? = null,
+    val progress: HubChecklistProgress? = null,
+    /** Moc checklist reset (giay epoch UTC) */
+    @SerializedName("resets_at_epoch") val resetsAtEpoch: Long? = null,
+    @SerializedName("age_seconds") val ageSeconds: Long? = null
+)
+
+data class HubChecklists(
+    val daily: HubChecklist? = null,
+    val weekly: HubChecklist? = null
+)
 
 // ---- Kenh duoc chi dinh bang ,setchannel ----
 data class HubChannel(
