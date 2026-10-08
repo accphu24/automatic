@@ -458,7 +458,7 @@ object FarmController {
                 val equipped = gems.equipped.orEmpty()
                 if (equipped.isEmpty()) return null   // chua co du lieu gem -> khong dung
                 val equippedSlots = equipped.mapNotNull { it.slot }.toSet()
-                if (equippedSlots.size >= 3) return null
+                if (equippedSlots.containsAll(REQUIRED_GEM_SLOTS)) return null   // du 3 slot thuong (gem special "star" khong tinh)
                 val spareSlots = gems.spare.orEmpty()
                     .filter { (it.count ?: 0L) > 0L }
                     .mapNotNull { it.slot }

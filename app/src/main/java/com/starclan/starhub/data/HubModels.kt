@@ -14,6 +14,7 @@ data class HubResponse(
     val daily: HubDaily? = null,
     val cowoncy: HubCowoncy? = null,
     @SerializedName("weapon_shards") val weaponShards: HubWeaponShards? = null,
+    val event: HubEvent? = null,
     val gems: HubGems? = null,
     val huntbot: HubHuntbot? = null,
     val quest: HubQuest? = null,
@@ -139,6 +140,29 @@ data class HubWeaponShards(
     @SerializedName("emoji_id") val emojiId: String? = null,
     @SerializedName("emoji_animated") val emojiAnimated: Boolean? = null,
     val emoji: String? = null,
+    @SerializedName("age_seconds") val ageSeconds: Long? = null
+)
+
+/** Tin su kien khi hunt, dang `🐻 | [8/10] ...`: moi loai (bieu tuong dau dong) 1 bo dem moi nhat + nhat ky gan day. */
+data class HubEventReward(
+    val amount: Long? = null,
+    val item: String? = null,
+    @SerializedName("emoji_name") val emojiName: String? = null,
+    @SerializedName("emoji_id") val emojiId: String? = null
+)
+
+data class HubEventEntry(
+    val kind: String? = null,
+    val current: Int? = null,
+    val max: Int? = null,
+    val text: String? = null,
+    val rewards: List<HubEventReward>? = null,
+    @SerializedName("age_seconds") val ageSeconds: Long? = null
+)
+
+data class HubEvent(
+    val counters: List<HubEventEntry>? = null,
+    val recent: List<HubEventEntry>? = null,
     @SerializedName("age_seconds") val ageSeconds: Long? = null
 )
 

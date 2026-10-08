@@ -46,6 +46,7 @@ object FarmOverlay {
     private var tvDaily: TextView? = null
     private var tvCash: TextView? = null
     private var tvWs: TextView? = null
+    private var tvEvent: TextView? = null
     private var tvQuest: TextView? = null
     private var tvZoo: TextView? = null
     private var tvPets: TextView? = null
@@ -152,11 +153,13 @@ object FarmOverlay {
         val daily = makeText(12f)
         val cash = makeText(12f)
         val ws = makeText(12f)
+        val event = makeText(12f)
         val quest = makeText(12f)
         tvHb = hb
         tvDaily = daily
         tvCash = cash
         tvWs = ws
+        tvEvent = event
         tvQuest = quest
         tvZoo = zoo
         tvPets = pets
@@ -205,6 +208,7 @@ object FarmOverlay {
         content.addView(daily)
         content.addView(cash)
         content.addView(ws)
+        content.addView(event)
         content.addView(quest)
         content.addView(zoo)
         content.addView(pets)
@@ -375,6 +379,7 @@ object FarmOverlay {
             tvDaily?.text = ""
             tvCash?.text = ""
             tvWs?.text = ""
+            tvEvent?.text = ""
             tvQuest?.text = ""
             tvZoo?.text = ""
             tvPets?.text = ""
@@ -465,6 +470,23 @@ object FarmOverlay {
             "🧿 Weapon shards: chưa có dữ liệu (gõ owo ws)"
         } else {
             "🧿 Weapon shards: ${HubFormat.num(wsAmount)}${ageText(ws.ageSeconds)}"
+        }
+
+        // --- su kien (tin hunt co dong [x/10]) ---
+        val evCounters = hub.event?.counters.orEmpty()
+        if (evCounters.isEmpty()) {
+            tvEvent?.text = ""
+            tvEvent?.visibility = View.GONE
+        } else {
+            tvEvent?.visibility = View.VISIBLE
+            val counts = evCounters.joinToString(" · ") { c -> "${c.kind ?: "?"} ${c.current ?: "?"}/${c.max ?: "?"}" }
+            val latest = hub.event?.recent.orEmpty().firstOrNull()
+            val rewardText = latest?.rewards.orEmpty().joinToString(", ") { r ->
+                "${HubFormat.num(r.amount)} ${r.item ?: "?"}"
+            }
+            val lastLine = if (latest == null || rewardText.isEmpty()) ""
+                else "\n   ↳ gần nhất: $rewardText${ageText(latest.ageSeconds)}"
+            tvEvent?.text = "🎉 Sự kiện: $counts$lastLine"
         }
 
         // --- quest + checklist ---
