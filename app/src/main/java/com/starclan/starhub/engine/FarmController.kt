@@ -68,10 +68,12 @@ object FarmController {
     private const val QUEST_COMMAND = "owo quest"
 
     // Nhip go lenh
-    private const val GAP_MIN_MS = 1_500L         // nghi giua hunt va battle
-    private const val GAP_MAX_MS = 3_500L
-    private const val CYCLE_MIN_MS = 19_000L      // 1 vong (hunt + battle) dai it nhat the nay
-    private const val CYCLE_MAX_MS = 27_000L
+    private const val GAP_MIN_MS = 1_200L         // nghi giua cac lenh lien tiep
+    private const val GAP_MAX_MS = 2_800L
+    // 1 vong (hunt + battle). OwO bat cooldown 15 giay moi lenh, nen vong ngan nhat 16.5 giay la sat nhat co the.
+    private const val CYCLE_MIN_MS = 16_500L
+    private const val CYCLE_MAX_MS = 21_000L
+    private const val FILLER_MIN_REMAINING_MS = 5_500L   // con it nhat chung nay trong vong thi moi chen them 1 lenh kiem tra
 
     // Nghi giai lao ngan: sau 45-80 vong nghi 1.5 - 4 phut
     private const val REST_EVERY_MIN = 45
@@ -157,6 +159,19 @@ object FarmController {
     private var unreachableSinceMs = 0L
 
     private val choreAt = mutableMapOf<String, Long>()
+    @Volatile private var sendCounter = 0
+
+    /** Lenh kiem tra / lap thoi gian cho cooldown hunt va battle (cung cap nhat du lieu cho bot) */
+    private data class Filler(val key: String, val command: String, val gapMs: Long)
+
+    private val FILLERS = listOf(
+        Filler("say_owo", "owo", 3 * 60_000L),        // noi "owo"
+        Filler("inv", "owo inv", 10 * 60_000L),       // kho: de bot biet con gem nao de thay
+        Filler("cash", "owo cash", 20 * 60_000L),     // cowoncy
+        Filler("hb", "owo hb", 20 * 60_000L),         // huntbot (xem / nhan thanh qua neu da xong)
+        Filler("ws", "owo ws", 30 * 60_000L),         // weapon shards
+        Filler("zoo", "owo zoo", 30 * 60_000L)        // zoo: bao pet moi chinh xac
+    )
     private var questUiWarned = false
 
     fun isRunning(): Boolean = job?.isActive == true
@@ -167,6 +182,11 @@ object FarmController {
 
     fun clearAlert() {
         update { it.copy(alert = null) }
+    }
+
+    /** Bat Hub noi / bat farm moi: xoa danh sach "pet moi" cua phien truoc, tinh lai tu bay gio */
+    fun resetSession() {
+        update { it.copy(sessionStartIso = Instant.now().toString(), sessionNewPets = emptyList()) }
     }
 
     /** Tat chuong (nut "Tat chuong" tren Hub noi) */
@@ -323,6 +343,7 @@ object FarmController {
         text: String
     ): SendResult {
         update { it.copy(lastCommand = text) }
+        sendCounter++
         val result = try {
             sender.send(text, settings, reopenChannel = false)
         } catch (e: CancellationException) {
@@ -598,6 +619,16 @@ object FarmController {
         if (choreDue("quest", questGap)) {
             return claimQuests(service, sender, settings)
         }
+
+        // Lenh kiem tra nhe (owo, inv, cash, hb, ws, zoo): chen vao luc cho cooldown, lech gio ngau nhien
+        for (f in FILLERS) {
+            val key = "filler_" + f.key
+            if (choreDue(key, f.gapMs)) {
+                val r = runChoreCommands(sender, settings, key, listOf(f.command))
+                choreAt[key] = System.currentTimeMillis() + Random.nextLong(0L, f.gapMs / 3)
+                return r
+            }
+        }
         return SendResult.OK
     }
 
@@ -670,6 +701,10 @@ object FarmController {
         choreAt["sacrifice"] = System.currentTimeMillis() - SACRIFICE_GAP_MS + SACRIFICE_FIRST_DELAY_MS
         choreAt["upgrade"] = System.currentTimeMillis()
         choreAt["open_boxes"] = System.currentTimeMillis() - OPEN_BOXES_GAP_MS + OPEN_BOXES_FIRST_DELAY_MS
+        for (f in FILLERS) {
+            // moi lenh kiem tra chay lan dau sau 30-150 giay, khong dong loat
+            choreAt["filler_" + f.key] = System.currentTimeMillis() - f.gapMs + Random.nextLong(30_000L, 150_000L)
+        }
         silentRecoverRequested = false
         questUiWarned = false
         lastSendOkAtMs = 0L
@@ -788,18 +823,8 @@ object FarmController {
                 delay(3_000)
             }
 
-            // 4.4 Viec vat (toi da 1 viec / vong)
+            // 4.4 Hunt va battle len dau de dung nhip cooldown; viec vat chen vao luc cho (4.8)
             update { it.copy(status = "Đang farm…") }
-            val choreResult = runOneChore(service, sender, settings)
-            if (choreResult == SendResult.CAPTCHA) {
-                handleCaptcha(ctx)
-                return
-            }
-            if (choreResult != SendResult.OK) {
-                Log.w(TAG, "Viec vat loi: ${describeSend(choreResult)} (bo qua, thu lai sau)")
-            } else {
-                delay(Random.nextLong(GAP_MIN_MS, GAP_MAX_MS))
-            }
 
             // 4.5 hunt (tuy che do hunt co the tam dung, battle van chay)
             val pauseReason = huntPauseReason(_state.value.hub, _state.value.huntMode)
@@ -847,8 +872,6 @@ object FarmController {
                 if (failsInRow >= 2) reopenChannel(sender, link)
             }
 
-            refreshHub(ctx)
-
             // 4.7 Nghi giai lao ngan cho giong nguoi that
             cyclesUntilRest--
             if (cyclesUntilRest <= 0) {
@@ -857,10 +880,26 @@ object FarmController {
                 continue
             }
 
-            // 4.8 Doi cho du 1 vong
+            // 4.8 Luc cho cooldown: cap nhat du lieu, roi chen viec vat / lenh kiem tra cho den het vong
             val target = Random.nextLong(CYCLE_MIN_MS, CYCLE_MAX_MS)
-            val elapsed = System.currentTimeMillis() - cycleStart
-            if (elapsed < target) delay(target - elapsed) else delay(1_500)
+            refreshHub(ctx)
+            while (isActive && target - (System.currentTimeMillis() - cycleStart) >= FILLER_MIN_REMAINING_MS) {
+                val before = sendCounter
+                val r = runOneChore(service, sender, settings)
+                if (r == SendResult.CAPTCHA) {
+                    handleCaptcha(ctx)
+                    return
+                }
+                if (sendCounter == before) break            // khong con viec nao den gio
+                if (r != SendResult.OK) {
+                    Log.w(TAG, "Viec chen loi: ${describeSend(r)} (bo qua, thu lai sau)")
+                    break
+                }
+                update { it.copy(status = "Đang farm…") }
+                delay(Random.nextLong(GAP_MIN_MS, GAP_MAX_MS))
+            }
+            val left = target - (System.currentTimeMillis() - cycleStart)
+            if (left > 0) delay(left) else delay(800)
         }
     }
 }

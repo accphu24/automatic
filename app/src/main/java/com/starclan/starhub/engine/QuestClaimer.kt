@@ -50,7 +50,10 @@ object QuestClaimer {
     private fun findBottomMost(service: AutoAccessibilityService, target: String): AccessibilityNodeInfo? {
         val root = service.rootInActiveWindow ?: return null
         val nodes = NodeTools.collect(root, maxNodes = 1500) { it.isVisibleToUser && labelMatches(it, target) }
-        return nodes.maxByOrNull { n ->
+        // Discord dat ten nut o mo ta (desc) cua chinh nut va lap lai bang 1 o chu con: uu tien nut bam duoc
+        val clickable = nodes.filter { it.isClickable }
+        val pool = if (clickable.isNotEmpty()) clickable else nodes
+        return pool.maxByOrNull { n ->
             val r = Rect()
             n.getBoundsInScreen(r)
             r.top

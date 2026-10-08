@@ -42,6 +42,11 @@ object FarmOverlay {
     private var tvStreak: TextView? = null
     private var tvGemUsing: TextView? = null
     private var tvGemStock: TextView? = null
+    private var tvHb: TextView? = null
+    private var tvDaily: TextView? = null
+    private var tvCash: TextView? = null
+    private var tvWs: TextView? = null
+    private var tvQuest: TextView? = null
     private var tvZoo: TextView? = null
     private var tvPets: TextView? = null
     private var btnToggle: Button? = null
@@ -143,6 +148,16 @@ object FarmOverlay {
         tvStreak = streak
         tvGemUsing = gemUsing
         tvGemStock = gemStock
+        val hb = makeText(12f)
+        val daily = makeText(12f)
+        val cash = makeText(12f)
+        val ws = makeText(12f)
+        val quest = makeText(12f)
+        tvHb = hb
+        tvDaily = daily
+        tvCash = cash
+        tvWs = ws
+        tvQuest = quest
         tvZoo = zoo
         tvPets = pets
 
@@ -164,13 +179,20 @@ object FarmOverlay {
         muteBtn.textSize = 12f
         muteBtn.visibility = View.GONE
         btnMute = muteBtn
+        val hideBtn = Button(service)
+        hideBtn.text = "➖ Ẩn menu"
+        hideBtn.setAllCaps(false)
+        hideBtn.textSize = 12f
         val closeBtn = Button(service)
-        closeBtn.text = "✕ Ẩn"
+        closeBtn.text = "⏻ Tắt hub"
         closeBtn.setAllCaps(false)
         closeBtn.textSize = 12f
         buttons.addView(toggle, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         buttons.addView(muteBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        buttons.addView(closeBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        val buttons2 = LinearLayout(service)
+        buttons2.orientation = LinearLayout.HORIZONTAL
+        buttons2.addView(hideBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        buttons2.addView(closeBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
 
         val content = LinearLayout(service)
         content.orientation = LinearLayout.VERTICAL
@@ -179,6 +201,11 @@ object FarmOverlay {
         content.addView(streak)
         content.addView(gemUsing)
         content.addView(gemStock)
+        content.addView(hb)
+        content.addView(daily)
+        content.addView(cash)
+        content.addView(ws)
+        content.addView(quest)
         content.addView(zoo)
         content.addView(pets)
 
@@ -187,6 +214,7 @@ object FarmOverlay {
         val panelWidth = minOf(dp(290), screenW - dp(40))
         panelBox.addView(buttons, LinearLayout.LayoutParams(panelWidth, LinearLayout.LayoutParams.WRAP_CONTENT))
         panelBox.addView(modeBtn, LinearLayout.LayoutParams(panelWidth, LinearLayout.LayoutParams.WRAP_CONTENT))
+        panelBox.addView(buttons2, LinearLayout.LayoutParams(panelWidth, LinearLayout.LayoutParams.WRAP_CONTENT))
         panelBox.addView(scroll, LinearLayout.LayoutParams(panelWidth, (screenH * 0.42f).toInt()))
         container.addView(panelBox, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
@@ -203,10 +231,18 @@ object FarmOverlay {
         muteBtn.setOnClickListener { FarmController.stopAlarm() }
         modeBtn.setOnClickListener { FarmController.cycleHuntMode(service.applicationContext) }
         FarmController.loadHuntMode(service.applicationContext)
+        // Chi thu gon menu, bong bong ngoi sao van o lai tren man hinh
+        hideBtn.setOnClickListener {
+            panelBox.visibility = View.GONE
+            relayout()
+        }
+        // Tat hub: dung farm (neu dang chay) va go ca bong bong
         closeBtn.setOnClickListener {
             FarmController.stop()
             hide()
         }
+        // Bat hub lai = bat dau phien moi: danh sach "pet moi" duoc xoa trang
+        FarmController.resetSession()
 
         bubble.setOnTouchListener(object : View.OnTouchListener {
             private var startX = 0
@@ -335,6 +371,11 @@ object FarmOverlay {
             tvStreak?.text = if (err.isNullOrBlank()) "Đang tải dữ liệu từ bot…" else "⚠️ $err"
             tvGemUsing?.text = ""
             tvGemStock?.text = ""
+            tvHb?.text = ""
+            tvDaily?.text = ""
+            tvCash?.text = ""
+            tvWs?.text = ""
+            tvQuest?.text = ""
             tvZoo?.text = ""
             tvPets?.text = ""
             return
@@ -372,6 +413,73 @@ object FarmOverlay {
             "🎒 Gem còn trong kho${ageText(hub.gems?.spareAgeSeconds)}:\n" + lines.joinToString("\n")
         }
 
+        // --- huntbot (ah) ---
+        val elapsed = if (st.hubFetchedAtMs > 0L) (System.currentTimeMillis() - st.hubFetchedAtMs) / 1000 else 0L
+        val h = hub.huntbot
+        tvHb?.text = if (h == null) {
+            "🤖 Huntbot: chưa có dữ liệu (gõ owo hb)"
+        } else if (h.hunting == true) {
+            val left = h.secondsLeft?.let { it - elapsed }
+            val timeText = when {
+                left == null -> h.timeRemainingText?.let { "còn $it" } ?: "chưa rõ giờ xong"
+                left > 0L -> "còn ${HubFormat.shortDuration(left)}"
+                else -> "đã tới giờ xong"
+            }
+            val pct = h.progressPct?.let { " · ${HubFormat.trimNum(it)}%" } ?: ""
+            val caught = h.animalsCaptured?.let { " · ${HubFormat.num(it)} con" } ?: ""
+            val ess = h.essence?.let { " · essence ${HubFormat.num(it)}" } ?: ""
+            "🤖 Huntbot: đang săn$pct · $timeText$caught$ess"
+        } else {
+            val ess = h.essence?.let { " · essence ${HubFormat.num(it)}" } ?: ""
+            "🤖 Huntbot: KHÔNG chạy$ess — bạn tự chạy lại"
+        }
+
+        // --- daily ---
+        val d = hub.daily
+        tvDaily?.text = if (d == null) {
+            "🎁 Daily: chưa có dữ liệu (gõ owo daily)"
+        } else {
+            val left = d.secondsLeft?.let { it - elapsed }
+            val timeText = when {
+                left == null -> "chưa rõ giờ nhận"
+                left > 0L -> "còn ${HubFormat.shortDuration(left)} nữa nhận được"
+                else -> "✅ đã sẵn sàng nhận"
+            }
+            val streak = d.streak?.let { " · chuỗi ${HubFormat.num(it)} ngày" } ?: ""
+            "🎁 Daily: $timeText$streak"
+        }
+
+        // --- cowoncy ---
+        val cash = hub.cowoncy
+        val cashAmount = cash?.amount
+        tvCash?.text = if (cash == null || cashAmount == null) {
+            "💰 Cowoncy: chưa có dữ liệu (gõ owo cash)"
+        } else {
+            "💰 Cowoncy: ${HubFormat.num(cashAmount)}${ageText(cash.ageSeconds)}"
+        }
+
+        // --- weapon shards: bot chua doc duoc, can mau tin owo ws ---
+        tvWs?.text = "🧿 Weapon shards (ws): chưa đọc được — cần mẫu tin của lệnh owo ws"
+
+        // --- quest + checklist ---
+        val q = hub.quest
+        val dailyProg = hub.checklists?.daily?.progress
+        val weeklyProg = hub.checklists?.weekly?.progress
+        val parts = mutableListOf<String>()
+        val sealCount = q?.seals
+        if (sealCount != null) parts.add("seals ${HubFormat.num(sealCount)}")
+        val dailyCur = dailyProg?.cur
+        if (dailyCur != null) parts.add("daily $dailyCur/${dailyProg?.max ?: "?"}")
+        val weeklyCur = weeklyProg?.cur
+        if (weeklyCur != null) parts.add("weekly $weeklyCur/${weeklyProg?.max ?: "?"}")
+        val qItems = q?.quests.orEmpty()
+        if (qItems.isNotEmpty()) parts.add("quest còn ${qItems.count { it.done != true }}/${qItems.size}")
+        tvQuest?.text = if (parts.isEmpty()) {
+            "📜 Quest: chưa có dữ liệu (gõ owo q)"
+        } else {
+            "📜 Quest: " + parts.joinToString(" · ")
+        }
+
         // --- zoo ---
         val z = hub.zoo
         tvZoo?.text = if (z == null) {
@@ -383,12 +491,13 @@ object FarmOverlay {
             "🐾 Zoo: $unlocked loài đã mở khóa (trong đó $sacrificed loài số lượng 0 do hiến tế)$points${ageText(z.ageSeconds)}"
         }
 
-        // --- pet moi ---
-        val newPets = hub.newPets?.pets.orEmpty()
+        // --- pet moi: chi tinh tu luc bat Hub / bat farm (tat bat lai la xoa trang) ---
+        val sessionNames = st.sessionNewPets.toSet()
+        val newPets = hub.newPets?.pets.orEmpty().filter { (it.name ?: "") in sessionNames }
         tvPets?.text = if (newPets.isEmpty()) {
-            "🆕 Pet mới: chưa có"
+            "🆕 Pet mới lần farm này: chưa có"
         } else {
-            "🆕 Pet mới (chưa có trong zoo):\n" + newPets.take(6).joinToString("\n") { p ->
+            "🆕 Pet mới lần farm này (chưa có trong zoo):\n" + newPets.take(6).joinToString("\n") { p ->
                 "  ${p.name ?: "?"}" + (p.rankVi?.let { " · $it" } ?: "") + " ×${p.timesFound ?: 1}"
             }
         }
