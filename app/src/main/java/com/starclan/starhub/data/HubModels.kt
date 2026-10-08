@@ -13,6 +13,7 @@ data class HubResponse(
     @SerializedName("server_time") val serverTime: String? = null,
     val daily: HubDaily? = null,
     val cowoncy: HubCowoncy? = null,
+    @SerializedName("weapon_shards") val weaponShards: HubWeaponShards? = null,
     val gems: HubGems? = null,
     val huntbot: HubHuntbot? = null,
     val quest: HubQuest? = null,
@@ -125,6 +126,15 @@ data class HubDaily(
 )
 
 data class HubCowoncy(
+    val amount: Long? = null,
+    @SerializedName("emoji_id") val emojiId: String? = null,
+    @SerializedName("emoji_animated") val emojiAnimated: Boolean? = null,
+    val emoji: String? = null,
+    @SerializedName("age_seconds") val ageSeconds: Long? = null
+)
+
+/** So weapon shards (ws) bot doc tu tin `owo ws` — dang y het cowoncy. */
+data class HubWeaponShards(
     val amount: Long? = null,
     @SerializedName("emoji_id") val emojiId: String? = null,
     @SerializedName("emoji_animated") val emojiAnimated: Boolean? = null,

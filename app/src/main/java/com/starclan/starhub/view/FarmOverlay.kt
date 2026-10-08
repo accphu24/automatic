@@ -458,8 +458,14 @@ object FarmOverlay {
             "💰 Cowoncy: ${HubFormat.num(cashAmount)}${ageText(cash.ageSeconds)}"
         }
 
-        // --- weapon shards: bot chua doc duoc, can mau tin owo ws ---
-        tvWs?.text = "🧿 Weapon shards (ws): chưa đọc được — cần mẫu tin của lệnh owo ws"
+        // --- weapon shards (ws) ---
+        val ws = hub.weaponShards
+        val wsAmount = ws?.amount
+        tvWs?.text = if (ws == null || wsAmount == null) {
+            "🧿 Weapon shards: chưa có dữ liệu (gõ owo ws)"
+        } else {
+            "🧿 Weapon shards: ${HubFormat.num(wsAmount)}${ageText(ws.ageSeconds)}"
+        }
 
         // --- quest + checklist ---
         val q = hub.quest

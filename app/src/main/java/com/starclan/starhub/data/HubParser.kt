@@ -34,6 +34,7 @@ object HubParser {
         return HubResponse(
             daily = section("daily", HubDaily::class.java),
             cowoncy = section("cowoncy", HubCowoncy::class.java),
+            weaponShards = section("weapon_shards", HubWeaponShards::class.java),
             gems = section("gems", HubGems::class.java),
             huntbot = section("huntbot", HubHuntbot::class.java),
             quest = section("quest", HubQuest::class.java),
