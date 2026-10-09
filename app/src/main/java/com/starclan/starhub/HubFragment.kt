@@ -359,7 +359,7 @@ class HubFragment : Fragment() {
             val warn = if (p <= 15) "  ⚠️ sắp hết" else ""
             val icon = iconOf(e.emojiId, e.emojiAnimated, e.emoji, e.tier)
             val color = toneColor(HubSummary.gemTone(p))
-            addIconTextRow(body, icon, "Slot ${e.slot ?: "?"} · ${e.tier ?: "?"}$warn",
+            addIconTextRow(body, icon, "${HubFormat.gemType(e.slot)} · ${e.tier ?: "?"}$warn",
                 "${e.current ?: "?"}/${e.max ?: "?"} ($p%)", ringPercent = p, ringColor = color, topDp = if (i == 0) 0 else 14)
         }
         val spareAge = g?.spareAgeSeconds?.let { " · " + HubFormat.age(it) }.orEmpty()
@@ -373,7 +373,7 @@ class HubFragment : Fragment() {
                 val first = list.first()
                 val icon = iconOf(first.emojiId, first.emojiAnimated, first.emoji, first.tier)
                 val line = list.joinToString(" · ") { "${it.tier ?: "?"} ×${HubFormat.num(it.count)}" }
-                addIconTextRow(body, icon, "Slot $slot", line, topDp = if (idx == 0) 4 else 8, iconSizeDp = 26)
+                addIconTextRow(body, icon, HubFormat.gemType(slot), line, topDp = if (idx == 0) 4 else 8, iconSizeDp = 26)
             }
         }
     }

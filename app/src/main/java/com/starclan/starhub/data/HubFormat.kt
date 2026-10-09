@@ -7,6 +7,16 @@ import java.util.Locale
  * (khong dung gi cua Android) nen de kiem tra rieng va khong bi loi giao dien.
  */
 object HubFormat {
+    /** Ten 4 loai gem cua OwO theo slot. Lenh dung gem van la ID so (owo use 51 65 72 79). */
+    fun gemType(slot: String?): String = when (slot) {
+        "1" -> "Hunting"
+        "3" -> "Empowering"
+        "4" -> "Lucky"
+        "star" -> "Special"
+        null -> "?"
+        else -> "Slot $slot"
+    }
+
 
     private const val LOW_GEM_PERCENT = 15
 
@@ -125,7 +135,7 @@ object HubFormat {
             sb.append("Đang dùng:")
             for (e in equipped) {
                 val warn = if ((e.percent ?: 100) <= LOW_GEM_PERCENT) " ⚠️ sắp hết" else ""
-                sb.append("\n• Slot ${e.slot ?: "?"} — ${e.tier ?: "?"}$warn")
+                sb.append("\n• ${gemType(e.slot)} — ${e.tier ?: "?"}$warn")
                 sb.append("\n   ${bar(e.percent)} ${e.current ?: "?"}/${e.max ?: "?"} (${pct(e.percent)}%)")
             }
         }
@@ -135,7 +145,7 @@ object HubFormat {
             sb.append("\n(không có, hoặc bot chưa thấy kho)")
         } else {
             for ((slot, list) in spare.groupBy { it.slot ?: "?" }) {
-                sb.append("\n• Slot $slot: ")
+                sb.append("\n• ${gemType(slot)}: ")
                 sb.append(list.joinToString(" · ") { "${it.tier ?: "?"} ×${num(it.count)} (${it.code ?: "?"})" })
             }
         }

@@ -105,7 +105,7 @@ object HubSummary {
             ?: return TileState("—", "Chưa thấy gem đang dùng", Tone.IDLE)
         val more = if (equipped.size > 1) " · ${equipped.size} gem" else ""
         val icon = iconOf(lowest.emojiId, lowest.emojiAnimated, lowest.emoji, lowest.tier)
-        return TileState("${lowest.percent ?: 0}%", "Slot ${lowest.slot ?: "?"} ${lowest.tier ?: ""}$more".trim(),
+        return TileState("${lowest.percent ?: 0}%", "${HubFormat.gemType(lowest.slot)} ${lowest.tier ?: ""}$more".trim(),
                          gemTone(lowest.percent), icon, lowest.percent)
     }
 

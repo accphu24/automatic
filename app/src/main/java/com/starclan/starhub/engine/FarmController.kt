@@ -2,6 +2,7 @@ package com.starclan.starhub.engine
 
 import android.content.Context
 import android.util.Log
+import com.starclan.starhub.data.HubFormat
 import com.starclan.starhub.data.HubResponse
 import com.starclan.starhub.data.HubResult
 import com.starclan.starhub.data.OwoTrackerApi
@@ -466,7 +467,7 @@ object FarmController {
                 val missing = REQUIRED_GEM_SLOTS - equippedSlots
                 val noSpare = missing.filter { it !in spareSlots }
                 if (noSpare.isNotEmpty()) {
-                    return "Mode 2: thiếu gem slot ${noSpare.joinToString(", ")} và trong kho không còn"
+                    return "Mode 2: thiếu gem ${noSpare.joinToString(", ") { HubFormat.gemType(it) }} và trong kho không còn"
                 }
                 return null
             }

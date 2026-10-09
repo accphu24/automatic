@@ -403,7 +403,7 @@ object FarmOverlay {
             "💎 Gem đang dùng: chưa có dữ liệu (gõ owo hunt)"
         } else {
             "💎 Gem đang dùng:\n" + eq.joinToString("\n") { g ->
-                "  Slot ${g.slot ?: "?"} · ${g.tier ?: "?"} [${g.current ?: 0}/${g.max ?: 0}]"
+                "  ${HubFormat.gemType(g.slot)} · ${g.tier ?: "?"} [${g.current ?: 0}/${g.max ?: 0}]"
             }
         }
 
@@ -413,7 +413,7 @@ object FarmOverlay {
             "🎒 Gem còn trong kho: chưa có dữ liệu (gõ owo inv)"
         } else {
             val lines = spare.groupBy { it.slot ?: "?" }.entries.sortedBy { it.key }.map { entry ->
-                "  Slot ${entry.key}: " + entry.value.joinToString(", ") { g -> "${g.tier ?: "?"}×${g.count ?: 0}" }
+                "  ${HubFormat.gemType(entry.key)}: " + entry.value.joinToString(", ") { g -> "${g.tier ?: "?"}×${g.count ?: 0}" }
             }
             "🎒 Gem còn trong kho${ageText(hub.gems?.spareAgeSeconds)}:\n" + lines.joinToString("\n")
         }
