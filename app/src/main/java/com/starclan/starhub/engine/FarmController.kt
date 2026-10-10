@@ -74,6 +74,7 @@ object FarmController {
     // 1 vong (hunt + battle). OwO bat cooldown 15 giay moi lenh, nen vong ngan nhat 16.5 giay la sat nhat co the.
     private const val CYCLE_MIN_MS = 16_500L
     private const val CYCLE_MAX_MS = 21_000L
+    private const val CHORE_REQUEUE_MS = 2 * 60_000L     // lenh vua go thanh cong -> cho 2 phut moi quay lai danh sach random
     private const val FILLER_MIN_REMAINING_MS = 5_500L   // con it nhat chung nay trong vong thi moi chen them 1 lenh kiem tra
 
     // Nghi giai lao ngan: sau 45-80 vong nghi 1.5 - 4 phut
@@ -99,8 +100,6 @@ object FarmController {
     // Viec vat
     private const val DAILY_GAP_MS = 30 * 60_000L          // da thay den gio nhan daily thi thu lai moi 30 phut
     private const val DAILY_UNKNOWN_GAP_MS = 6 * 3_600_000L // chua co du lieu daily: thu 1 lan roi cho 6 gio
-    private const val QUEST_CLAIM_GAP_MS = 30 * 60_000L    // moi 30 phut: mo Quest Log, nhan thuong nhiem vu da xong
-    private const val QUEST_CLAIM_GAP_MODE1_MS = 10 * 60_000L // che do hunt 1: kiem tra lootbox thuong xuyen hon
 
     // Che do hunt (Ruby chon tren Hub noi, luu lai cho lan sau)
     private const val PREFS_NAME = "star_farm"
@@ -115,19 +114,13 @@ object FarmController {
 
     // Mo hop dinh ky: lootbox, weapon crate, bcrate (owo bwc all do Ruby cung cap; owo lb all / owo wc all la lenh chuan cua OwO)
     private val OPEN_BOXES_COMMANDS: List<String> = listOf("owo lb all", "owo wc all", "owo bwc all")
-    private const val OPEN_BOXES_GAP_MS = 60 * 60_000L
-    private const val OPEN_BOXES_FIRST_DELAY_MS = 5 * 60_000L
 
     // Hien te lay essence (Ruby chon owo sc all), roi nang cap huntbot bang het essence.
     private val SACRIFICE_COMMANDS: List<String> = listOf("owo sc all")
-    private const val SACRIFICE_GAP_MS = 3 * 3_600_000L
-    private const val SACRIFICE_FIRST_DELAY_MS = 30 * 60_000L   // lan dau sau khi bat dau 30 phut
     // Nang cap huntbot tu dong theo huong dan cua Ruby (bot doc cap do tung chi so tu `owo hb`):
     //  1. cost (toi da cap 5) -> 2. efficiency va gain nang DEU nhau (toi da 215 / 200)
     //  -> 3. experience (200) -> 4. duration (235) -> 5. radar (999)
     private const val UPGRADE_ENABLED = true
-    private const val UPGRADE_GAP_MS = 3 * 3_600_000L
-    private const val TRAITS_REFRESH_GAP_MS = 30 * 60_000L
     private val TRAIT_MAX = mapOf(
         "cost" to 5, "efficiency" to 215, "gain" to 200,
         "experience" to 200, "duration" to 235, "radar" to 999
@@ -162,16 +155,18 @@ object FarmController {
     private val choreAt = mutableMapOf<String, Long>()
     @Volatile private var sendCounter = 0
 
-    /** Lenh kiem tra / lap thoi gian cho cooldown hunt va battle (cung cap nhat du lieu cho bot) */
-    private data class Filler(val key: String, val command: String, val gapMs: Long)
+    /** Lenh kiem tra nhe, chen ngau nhien vao luc cho cooldown hunt va battle (cung cap nhat du lieu cho bot) */
+    private data class Filler(val key: String, val command: String)
+
+    /** 1 viec trong danh sach random: key de tinh hang cho 2 phut, run = cach go */
+    private class Chore(val key: String, val run: suspend () -> SendResult)
 
     private val FILLERS = listOf(
-        Filler("say_owo", "owo", 3 * 60_000L),        // noi "owo"
-        Filler("inv", "owo inv", 10 * 60_000L),       // kho: de bot biet con gem nao de thay
-        Filler("cash", "owo cash", 20 * 60_000L),     // cowoncy
-        Filler("hb", "owo hb", 20 * 60_000L),         // huntbot (xem / nhan thanh qua neu da xong)
-        Filler("ws", "owo ws", 30 * 60_000L),         // weapon shards
-        Filler("zoo", "owo zoo", 30 * 60_000L)        // zoo: bao pet moi chinh xac
+        Filler("say_owo", "owo"),       // noi "owo"
+        Filler("inv", "owo inv"),       // kho: de bot biet con gem nao de thay
+        Filler("cash", "owo cash"),     // cowoncy
+        Filler("ws", "owo ws"),         // weapon shards
+        Filler("zoo", "owo zoo")        // zoo: bao pet moi chinh xac
     )
     private var questUiWarned = false
 
@@ -508,6 +503,7 @@ object FarmController {
         settings: OwoTrackerPrefs.Settings
     ): SendResult {
         choreAt["quest"] = System.currentTimeMillis()
+        sendCounter++
         update { it.copy(status = "Kiểm tra nhiệm vụ…", lastCommand = QUEST_COMMAND) }
         return DiscordSender.sendMutex.withLock {
             val r = try {
@@ -535,33 +531,49 @@ object FarmController {
         }
     }
 
+    /**
+     * Chon NGAU NHIEN 1 viec trong danh sach "lenh ngoai hunt/battle" roi go. Viec nao go thanh cong
+     * thi phai cho CHORE_REQUEUE_MS (2 phut) moi quay lai danh sach; go loi thi van o trong danh sach.
+     * Viec chi hop le khi du dieu kien (vd daily chi khi bot bao den gio). Khong con viec nao -> OK, khong go gi.
+     */
     private suspend fun runOneChore(
         service: AutoAccessibilityService,
         sender: DiscordSender,
         settings: OwoTrackerPrefs.Settings
     ): SendResult {
         val hub = _state.value.hub
+        fun ready(key: String) = choreDue("wait_$key", CHORE_REQUEUE_MS)
+        val pool = mutableListOf<Chore>()
 
+        // Daily: chi khi bot bao da den gio (hoac chua co du lieu: thu 1 lan roi cho 6 gio)
         val daily = hub?.daily
-        if (daily == null) {
-            if (choreDue("daily_unknown", DAILY_UNKNOWN_GAP_MS)) {
-                choreAt["daily_unknown"] = System.currentTimeMillis()
-                return runChoreCommands(sender, settings, "daily", listOf(DAILY_COMMAND))
-            }
+        val dailyDue = if (daily == null) {
+            choreDue("daily_unknown", DAILY_UNKNOWN_GAP_MS)
         } else {
             val left = daily.secondsLeft
-            if (left != null && left <= 0L && choreDue("daily", DAILY_GAP_MS)) {
-                return runChoreCommands(sender, settings, "daily", listOf(DAILY_COMMAND))
+            left != null && left <= 0L && choreDue("daily", DAILY_GAP_MS)
+        }
+        if (dailyDue && ready("daily")) {
+            pool += Chore("daily") {
+                if (daily == null) choreAt["daily_unknown"] = System.currentTimeMillis()
+                runChoreCommands(sender, settings, "daily", listOf(DAILY_COMMAND))
             }
         }
 
-        // Huntbot: nhan thanh qua khi da xong, roi nhac Ruby tu chay lai (can mat khau xac minh)
+        // Huntbot: nhac Ruby khi dang khong chay (khong go lenh)
         val hb = hub?.huntbot
-        if (hb != null) {
-            val left = hb.secondsLeft
-            if (left != null && left <= 0L && choreDue("huntbot", HUNTBOT_GAP_MS)) {
-                val r = runChoreCommands(sender, settings, "huntbot", listOf(HUNTBOT_COLLECT_COMMAND))
-                if (r == SendResult.OK) {
+        if (hb != null && hb.hunting == false && choreDue("huntbot_idle", HUNTBOT_IDLE_NOTIFY_GAP_MS)) {
+            choreAt["huntbot_idle"] = System.currentTimeMillis()
+            notifyOwner("🤖 Huntbot đang không chạy. Bạn tự gõ `owo hb 24h` + mã xác nhận để chạy lại nhé.", toAlt = true)
+        }
+
+        // owo hb: xem / nhan thanh qua; neu huntbot vua xong thi nhac Ruby tu chay lai (can mat khau xac minh)
+        if (ready("hb")) {
+            pool += Chore("hb") {
+                val finished = hb?.secondsLeft?.let { it <= 0L } == true && choreDue("huntbot", HUNTBOT_GAP_MS)
+                val r = runChoreCommands(sender, settings, "hb", listOf(HUNTBOT_COLLECT_COMMAND))
+                if (r == SendResult.OK && finished) {
+                    choreAt["huntbot"] = System.currentTimeMillis()
                     choreAt["huntbot_idle"] = System.currentTimeMillis()
                     notifyOwner(
                         "🤖 Huntbot đã chạy xong và app đã nhận thành quả (owo hb). " +
@@ -569,68 +581,49 @@ object FarmController {
                         toAlt = true
                     )
                 }
-                return r
-            }
-            if (hb.hunting == false && choreDue("huntbot_idle", HUNTBOT_IDLE_NOTIFY_GAP_MS)) {
-                choreAt["huntbot_idle"] = System.currentTimeMillis()
-                notifyOwner("🤖 Huntbot đang không chạy. Bạn tự gõ `owo hb 24h` + mã xác nhận để chạy lại nhé.", toAlt = true)
+                r
             }
         }
 
-        // Mo lootbox / crate / bcrate dinh ky
-        if (OPEN_BOXES_COMMANDS.isNotEmpty() && choreDue("open_boxes", OPEN_BOXES_GAP_MS)) {
-            return runChoreCommands(sender, settings, "open_boxes", OPEN_BOXES_COMMANDS)
+        // Mo lootbox / crate / bcrate
+        if (OPEN_BOXES_COMMANDS.isNotEmpty() && ready("open_boxes")) {
+            pool += Chore("open_boxes") { runChoreCommands(sender, settings, "open_boxes", OPEN_BOXES_COMMANDS) }
         }
 
         // Hien te lay essence
-        if (SACRIFICE_COMMANDS.isNotEmpty() && choreDue("sacrifice", SACRIFICE_GAP_MS)) {
-            val r = runChoreCommands(sender, settings, "sacrifice", SACRIFICE_COMMANDS)
-            if (r == SendResult.OK) choreAt["upgrade"] = 0L   // co essence moi -> nang cap ngay vong sau
-            return r
+        if (SACRIFICE_COMMANDS.isNotEmpty() && ready("sacrifice")) {
+            pool += Chore("sacrifice") { runChoreCommands(sender, settings, "sacrifice", SACRIFICE_COMMANDS) }
         }
 
-        // Nang cap huntbot bang het essence (chon chi so theo cap do bot doc duoc)
-        if (UPGRADE_ENABLED) {
-            val traits = hub?.huntbot?.traits
-            if (traits == null) {
-                // Chua biet cap do cac chi so -> go owo hb 1 lan de bot doc (an toan, chi xem thong tin)
-                if (choreDue("traits_refresh", TRAITS_REFRESH_GAP_MS)) {
-                    return runChoreCommands(sender, settings, "traits_refresh", listOf(HUNTBOT_COLLECT_COMMAND))
-                }
-            } else if (choreDue("upgrade", UPGRADE_GAP_MS)) {
-                val trait = pickUpgradeTrait(traits)
-                if (trait == null) {
-                    choreAt["upgrade"] = System.currentTimeMillis()   // da toi da het, khong lam gi
-                } else {
+        // Nang cap huntbot (chon chi so theo cap do bot doc duoc; bo qua khi bot biet essence = 0)
+        if (UPGRADE_ENABLED && ready("upgrade")) {
+            val trait = hb?.traits?.let { pickUpgradeTrait(it) }
+            val essence = hb?.essence
+            if (trait != null && (essence == null || essence > 0L)) {
+                pool += Chore("upgrade") {
                     // go owo hb sau khi nang cap de bot cap nhat cap do + essence moi
-                    return runChoreCommands(sender, settings, "upgrade", listOf("owo upg $trait all", HUNTBOT_COLLECT_COMMAND))
+                    runChoreCommands(sender, settings, "upgrade", listOf("owo upg $trait all", HUNTBOT_COLLECT_COMMAND))
                 }
             }
         }
 
-        // Che do hunt 1: sang ngay moi (checklist da reset) thi doc lai Quest Log ngay
-        val dailyResets = hub?.checklists?.daily?.resetsAtEpoch
-        if (_state.value.huntMode == 1 && dailyResets != null && System.currentTimeMillis() / 1000 >= dailyResets &&
-            choreDue("quest_reset", 5 * 60_000L)
-        ) {
-            choreAt["quest_reset"] = System.currentTimeMillis()
-            choreAt["quest"] = 0L
-        }
-        val questGap = if (_state.value.huntMode == 1) QUEST_CLAIM_GAP_MODE1_MS else QUEST_CLAIM_GAP_MS
-        if (choreDue("quest", questGap)) {
-            return claimQuests(service, sender, settings)
+        // Quest: mo Quest Log va bam nhan thuong
+        if (ready("quest")) {
+            pool += Chore("quest") { claimQuests(service, sender, settings) }
         }
 
-        // Lenh kiem tra nhe (owo, inv, cash, hb, ws, zoo): chen vao luc cho cooldown, lech gio ngau nhien
+        // Lenh kiem tra nhe
         for (f in FILLERS) {
-            val key = "filler_" + f.key
-            if (choreDue(key, f.gapMs)) {
-                val r = runChoreCommands(sender, settings, key, listOf(f.command))
-                choreAt[key] = System.currentTimeMillis() + Random.nextLong(0L, f.gapMs / 3)
-                return r
+            if (ready(f.key)) {
+                pool += Chore(f.key) { runChoreCommands(sender, settings, "filler_" + f.key, listOf(f.command)) }
             }
         }
-        return SendResult.OK
+
+        if (pool.isEmpty()) return SendResult.OK
+        val pick = pool.random()
+        val r = pick.run()
+        if (r == SendResult.OK) choreAt["wait_${pick.key}"] = System.currentTimeMillis()
+        return r
     }
 
     /** Canh gac: hoi bot moi vai giay. Thay captcha -> dung; OwO im lang -> yeu cau mo lai kenh / dung han; mat bot -> dung. */
@@ -699,13 +692,7 @@ object FarmController {
 
         val startIso = Instant.now().toString()
         choreAt.clear()
-        choreAt["sacrifice"] = System.currentTimeMillis() - SACRIFICE_GAP_MS + SACRIFICE_FIRST_DELAY_MS
-        choreAt["upgrade"] = System.currentTimeMillis()
-        choreAt["open_boxes"] = System.currentTimeMillis() - OPEN_BOXES_GAP_MS + OPEN_BOXES_FIRST_DELAY_MS
-        for (f in FILLERS) {
-            // moi lenh kiem tra chay lan dau sau 30-150 giay, khong dong loat
-            choreAt["filler_" + f.key] = System.currentTimeMillis() - f.gapMs + Random.nextLong(30_000L, 150_000L)
-        }
+        choreAt["wait_zoo"] = System.currentTimeMillis()   // zoo vua duoc go o buoc "Check zoo luc bat dau"
         silentRecoverRequested = false
         questUiWarned = false
         lastSendOkAtMs = 0L
