@@ -279,6 +279,21 @@ object FarmController {
     }
 
     /** Lay du lieu Hub moi nhat tu bot, cap nhat trang thai va bao pet moi (neu dang farm). */
+    /** Bat/tat che do Event (bot luu lai). Hub cap nhat ngay khi bot xac nhan; loi thi bao tren Hub noi. */
+    suspend fun setEventMode(context: Context, enabled: Boolean) {
+        val s = OwoTrackerPrefs.load(context)
+        if (s.apiUrl.isBlank() || s.token.isBlank()) {
+            update { it.copy(hubError = "Chưa nhập địa chỉ API / token ở Cài đặt") }
+            return
+        }
+        val saved = OwoTrackerApi.setEventMode(s.apiUrl, s.token, enabled)
+        if (saved == null) {
+            update { it.copy(alert = "⚠️ Không đổi được chế độ Event (kiểm tra mạng / bot đã cập nhật chưa)") }
+            return
+        }
+        update { st -> st.copy(hub = st.hub?.copy(eventMode = saved)) }
+    }
+
     suspend fun refreshHub(context: Context) {
         val s = OwoTrackerPrefs.load(context)
         if (s.apiUrl.isBlank() || s.token.isBlank()) {

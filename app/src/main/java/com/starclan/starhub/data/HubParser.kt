@@ -31,11 +31,19 @@ object HubParser {
             }
         }
 
+        // Cong tat Event cua bot (true/false), khong phai object nen doc rieng
+        val eventMode: Boolean? = try {
+            obj.get("event_mode")?.takeIf { it.isJsonPrimitive }?.asBoolean
+        } catch (e: Exception) {
+            null
+        }
+
         return HubResponse(
             daily = section("daily", HubDaily::class.java),
             cowoncy = section("cowoncy", HubCowoncy::class.java),
             weaponShards = section("weapon_shards", HubWeaponShards::class.java),
             event = section("event", HubEvent::class.java),
+            eventMode = eventMode,
             gems = section("gems", HubGems::class.java),
             huntbot = section("huntbot", HubHuntbot::class.java),
             quest = section("quest", HubQuest::class.java),

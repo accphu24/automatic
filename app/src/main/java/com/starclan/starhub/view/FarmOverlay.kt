@@ -86,6 +86,7 @@ object FarmOverlay {
     private var btnToggle: TextView? = null
     private var btnMute: TextView? = null
     private var btnMode: TextView? = null
+    private var btnEvent: TextView? = null
 
     private val groups = mutableMapOf<String, Group>()
     private val collapsed = mutableSetOf<String>()   // nho trang thai thu gon trong luc app chay
@@ -346,14 +347,19 @@ object FarmOverlay {
         val modeBtn = pill(service, "🎯 Mode 3 · không dừng", C_BTN)
         val hideBtn = pill(service, "➖", C_BTN, 14f)
         val closeBtn = pill(service, "✖", C_BTN, 14f)
+        val eventBtn = pill(service, "🎉 Event: Tắt", C_BTN)
         btnToggle = toggle
         btnMute = muteBtn
         btnMode = modeBtn
+        btnEvent = eventBtn
 
+        val rowMute = LinearLayout(service)
+        rowMute.orientation = LinearLayout.HORIZONTAL
+        rowMute.addView(muteBtn, lparams(0, LinearLayout.LayoutParams.WRAP_CONTENT, weight = 1f, margin = dp(2)))
         val row1 = LinearLayout(service)
         row1.orientation = LinearLayout.HORIZONTAL
         row1.addView(toggle, lparams(0, LinearLayout.LayoutParams.WRAP_CONTENT, weight = 2f, margin = dp(2)))
-        row1.addView(muteBtn, lparams(0, LinearLayout.LayoutParams.WRAP_CONTENT, weight = 1.3f, margin = dp(2)))
+        row1.addView(eventBtn, lparams(0, LinearLayout.LayoutParams.WRAP_CONTENT, weight = 1.6f, margin = dp(2)))
         val row2 = LinearLayout(service)
         row2.orientation = LinearLayout.HORIZONTAL
         row2.addView(modeBtn, lparams(0, LinearLayout.LayoutParams.WRAP_CONTENT, weight = 3f, margin = dp(2)))
@@ -388,6 +394,7 @@ object FarmOverlay {
         panelBox.addView(statusRow, LinearLayout.LayoutParams(panelWidth, wrap))
         panelBox.addView(statusDetail, LinearLayout.LayoutParams(panelWidth, wrap))
         panelBox.addView(alert, LinearLayout.LayoutParams(panelWidth, wrap).also { it.setMargins(0, 0, 0, dp(6)) })
+        panelBox.addView(rowMute, LinearLayout.LayoutParams(panelWidth, wrap))
         panelBox.addView(row1, LinearLayout.LayoutParams(panelWidth, wrap))
         panelBox.addView(row2, LinearLayout.LayoutParams(panelWidth, wrap).also { it.setMargins(0, 0, 0, dp(8)) })
         panelBox.addView(scroll, LinearLayout.LayoutParams(panelWidth, wrap))
@@ -404,6 +411,11 @@ object FarmOverlay {
             }
         }
         muteBtn.setOnClickListener { FarmController.stopAlarm() }
+        // Che do Event: BAT = dang co su kien, duoc dung slot thu 4 (gem Special). Bot luu lai trang thai.
+        eventBtn.setOnClickListener {
+            val nowOn = FarmController.state.value.hub?.eventMode == true
+            scope?.launch { FarmController.setEventMode(service.applicationContext, !nowOn) }
+        }
         modeBtn.setOnClickListener { FarmController.cycleHuntMode(service.applicationContext) }
         FarmController.loadHuntMode(service.applicationContext)
         // Chi thu gon menu, bong bong ngoi sao van o lai tren man hinh
@@ -526,6 +538,9 @@ object FarmOverlay {
         btnToggle?.text = if (st.running) "■ Dừng" else "► Bắt đầu"
         setPillColor(btnToggle, if (st.running) C_STOP else C_START)
         btnMute?.visibility = if (st.ringing) View.VISIBLE else View.GONE
+        val eventOn = hub?.eventMode == true
+        btnEvent?.text = if (eventOn) "🎉 Event: BẬT" else "🎉 Event: Tắt"
+        setPillColor(btnEvent, if (eventOn) "#6A4FB3" else C_BTN)
 
         // Dang farm thi giu man hinh luon sang (tat man hinh la app khong go duoc nua)
         if (st.running != keepingScreenOn) {
@@ -589,6 +604,10 @@ object FarmOverlay {
 
         // ===== Gem =====
         val gemRows = mutableListOf<Row>()
+        gemRows.add(
+            if (eventOn) Row("Event", "BẬT — dùng cả slot 4 (Special)", Tone.GOOD)
+            else Row("Event", "Tắt — gem Special không tự dùng", Tone.MUTED)
+        )
         val eq = hub.gems?.equipped.orEmpty()
         if (eq.isEmpty()) {
             gemRows.add(Row("", "Đang dùng: chưa có dữ liệu (gõ owo hunt)", Tone.MUTED))

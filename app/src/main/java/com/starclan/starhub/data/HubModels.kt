@@ -15,6 +15,7 @@ data class HubResponse(
     val cowoncy: HubCowoncy? = null,
     @SerializedName("weapon_shards") val weaponShards: HubWeaponShards? = null,
     val event: HubEvent? = null,
+    @SerializedName("event_mode") val eventMode: Boolean? = null,
     val gems: HubGems? = null,
     val huntbot: HubHuntbot? = null,
     val quest: HubQuest? = null,

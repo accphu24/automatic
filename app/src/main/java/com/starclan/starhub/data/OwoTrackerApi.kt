@@ -168,6 +168,26 @@ object OwoTrackerApi {
         }
     }
 
+    /** Bat/tat che do Event cua bot. Tra ve gia tri bot da luu, hoac null neu loi (mang / sai token). */
+    suspend fun setEventMode(apiUrl: String, token: String, enabled: Boolean): Boolean? =
+        withContext<Boolean?>(Dispatchers.IO) {
+            try {
+                val url = URL(joinUrl(apiUrl, "/event-mode"))
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.setRequestProperty("Authorization", "Bearer $token")
+                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                conn.doOutput = true
+                conn.connectTimeout = 8_000
+                conn.readTimeout = 8_000
+                conn.outputStream.use { it.write("""{"enabled":$enabled}""".toByteArray(Charsets.UTF_8)) }
+                if (conn.responseCode == 200) enabled else null
+            } catch (e: Exception) {
+                Log.w(TAG, "setEventMode loi: ${e.message}")
+                null
+            }
+        }
+
     /** Bao owo-tracker biet 1 lenh da xu ly xong (hoac that bai), de no khong gui lai lenh do nua. */
     suspend fun ack(apiUrl: String, token: String, commandId: Int, status: String) = withContext(Dispatchers.IO) {
         try {
