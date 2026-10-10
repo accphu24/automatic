@@ -208,7 +208,7 @@ object FarmOverlay {
         val g = groups[key] ?: return
         val isCollapsed = key in collapsed
         g.body.visibility = if (isCollapsed) View.GONE else View.VISIBLE
-        g.chevron.text = if (isCollapsed) "▸" else "▾"
+        g.chevron.text = if (isCollapsed) "►" else "▼"
     }
 
     private fun rowView(ctx: Context, r: Row): View {
@@ -340,12 +340,12 @@ object FarmOverlay {
         tvAlert = alert
 
         // -- Nut: hang 1 (bat dau/dung + tat chuong), hang 2 (hunt mode, thu gon, tat hub) --
-        val toggle = pill(service, "▶ Bắt đầu", C_START, 14f)
+        val toggle = pill(service, "► Bắt đầu", C_START, 14f)
         val muteBtn = pill(service, "🔕 Tắt chuông", C_BTN)
         muteBtn.visibility = View.GONE
         val modeBtn = pill(service, "🎯 Mode 3 · không dừng", C_BTN)
         val hideBtn = pill(service, "➖", C_BTN, 14f)
-        val closeBtn = pill(service, "⏻", C_BTN, 14f)
+        val closeBtn = pill(service, "✖", C_BTN, 14f)
         btnToggle = toggle
         btnMute = muteBtn
         btnMode = modeBtn
@@ -514,7 +514,7 @@ object FarmOverlay {
         tvStatusCounts?.text = if (st.running) "hunt ${st.hunts} · battle ${st.battles}" else ""
         val detail = StringBuilder(st.status)
         if (st.running && st.lastCommand.isNotEmpty()) detail.append("\nLệnh gần nhất: ").append(st.lastCommand)
-        if (!st.huntPaused.isNullOrBlank()) detail.append("\n⏸ Hunt tạm dừng: ").append(st.huntPaused)
+        if (!st.huntPaused.isNullOrBlank()) detail.append("\n⏳ Hunt tạm dừng: ").append(st.huntPaused)
         tvStatusDetail?.text = detail.toString()
 
         val modeShort = when (st.huntMode) {
@@ -523,7 +523,7 @@ object FarmOverlay {
             else -> "không dừng"
         }
         btnMode?.text = "🎯 Mode ${st.huntMode} · $modeShort"
-        btnToggle?.text = if (st.running) "⏹ Dừng" else "▶ Bắt đầu"
+        btnToggle?.text = if (st.running) "■ Dừng" else "► Bắt đầu"
         setPillColor(btnToggle, if (st.running) C_STOP else C_START)
         btnMute?.visibility = if (st.ringing) View.VISIBLE else View.GONE
 
@@ -622,11 +622,11 @@ object FarmOverlay {
         if (wsAmount == null) {
             resRows.add(Row("Weapon shards", "Chưa có dữ liệu (gõ owo ws)", Tone.MUTED))
         } else {
-            resRows.add(Row("Weapon shards", "🧿 ${HubFormat.num(wsAmount)}${ageText(hub.weaponShards?.ageSeconds)}"))
+            resRows.add(Row("Weapon shards", "🗡️ ${HubFormat.num(wsAmount)}${ageText(hub.weaponShards?.ageSeconds)}"))
         }
         val resSummary = listOfNotNull(
             cashAmount?.let { "💰 ${HubFormat.num(it)}" },
-            wsAmount?.let { "🧿 ${HubFormat.num(it)}" }
+            wsAmount?.let { "🗡️ ${HubFormat.num(it)}" }
         ).joinToString(" · ")
         setGroup("res", resSummary, resRows)
 
