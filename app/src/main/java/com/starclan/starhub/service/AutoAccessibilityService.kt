@@ -29,6 +29,7 @@ import com.starclan.starhub.data.StepType
 import com.starclan.starhub.data.summarizeStep
 import com.starclan.starhub.engine.ButtonClicker
 import com.starclan.starhub.engine.DiscordSender
+import com.starclan.starhub.engine.DismantleConfirmer
 import com.starclan.starhub.engine.FarmController
 import com.starclan.starhub.engine.ScriptEngine
 import com.starclan.starhub.engine.SendResult
@@ -231,6 +232,52 @@ class AutoAccessibilityService : AccessibilityService() {
             if (!FarmOverlay.isShown()) {
                 Log.i(TAG, "Hub noi da tat - dung xu ly lenh cua bot")
                 break
+            }
+            // Lenh xoa vu khi: go `owo dismantle <ID>`, DOC hop xac nhan, chi bam Dismantle khi khop het (xem DismantleConfirmer)
+            if (cmd.action == "dismantle") {
+                val expectId = cmd.params["expect_id"].orEmpty()
+                val doDismantle = cmd.params["confirm_mode"] == "dismantle"
+                val expectQuality = cmd.params["expect_quality"]?.toDoubleOrNull()
+                if (FarmController.isRunning()) {
+                    OwoTrackerApi.ack(apiUrl, token, cmd.id, "failed", "Đang farm: màn hình không yên tĩnh, không dám xóa. Dừng farm rồi thử lại.")
+                    continue
+                }
+                if (expectId.length < 4 || commandText != "owo dismantle $expectId") {
+                    OwoTrackerApi.ack(apiUrl, token, cmd.id, "failed", "Lệnh dismantle thiếu/ sai ID (command_text không khớp expect_id).")
+                    continue
+                }
+                val sent = try {
+                    sender.send(commandText, settings, reopenChannel = first)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Loi khi go dismantle: ${e.message}")
+                    SendResult.SEND_FAILED
+                }
+                first = false
+                if (sent == SendResult.CAPTCHA) {
+                    OwoTrackerApi.ack(apiUrl, token, cmd.id, "failed", "CAPTCHA khi gõ lệnh.")
+                    alertCaptcha()
+                    captchaPauseUntilMs = System.currentTimeMillis() + 10 * 60 * 1000L
+                    break
+                }
+                if (sent != SendResult.OK) {
+                    OwoTrackerApi.ack(apiUrl, token, cmd.id, "failed", "Không gõ được lệnh vào Discord: $sent")
+                    delay(Random.nextLong(2500, 5500))
+                    continue
+                }
+                val outcome = try {
+                    DismantleConfirmer.confirm(this, expectId, expectQuality, click = doDismantle)
+                } catch (e: Exception) {
+                    DismantleConfirmer.Outcome(false, "Lỗi khi xác nhận: ${e.message}")
+                }
+                Log.d(TAG, "dismantle $expectId (${if (doDismantle) "xoa that" else "chay thu"}) -> ${outcome.ok}: ${outcome.note}")
+                OwoTrackerApi.ack(apiUrl, token, cmd.id, if (outcome.ok) "done" else "failed", outcome.note)
+                if (outcome.captcha) {
+                    alertCaptcha()
+                    captchaPauseUntilMs = System.currentTimeMillis() + 10 * 60 * 1000L
+                    break
+                }
+                delay(Random.nextLong(3000, 6000))
+                continue
             }
             // Lenh co "click_label" (vd quet danh sach vu khi nhieu trang): sau khi go lenh se BAM nut do nhieu lan.
             // Khong lam khi dang farm vi cac tin moi se day danh sach ra khoi man hinh.

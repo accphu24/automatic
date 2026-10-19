@@ -216,7 +216,7 @@ object OwoTrackerApi {
         }
 
     /** Bao owo-tracker biet 1 lenh da xu ly xong (hoac that bai), de no khong gui lai lenh do nua. */
-    suspend fun ack(apiUrl: String, token: String, commandId: Int, status: String) = withContext(Dispatchers.IO) {
+    suspend fun ack(apiUrl: String, token: String, commandId: Int, status: String, note: String? = null) = withContext(Dispatchers.IO) {
         try {
             val url = URL(joinUrl(apiUrl, "/commands/$commandId/ack"))
             val conn = url.openConnection() as HttpURLConnection
@@ -226,7 +226,9 @@ object OwoTrackerApi {
             conn.doOutput = true
             conn.connectTimeout = 10_000
             conn.readTimeout = 10_000
-            conn.outputStream.use { it.write("""{"status":"$status"}""".toByteArray()) }
+            val body = org.json.JSONObject().put("status", status)
+            if (!note.isNullOrBlank()) body.put("note", note.take(700))
+            conn.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
             conn.responseCode // can doc de request thuc su duoc gui di
         } catch (e: Exception) {
             Log.w(TAG, "ack loi: ${e.message}")
