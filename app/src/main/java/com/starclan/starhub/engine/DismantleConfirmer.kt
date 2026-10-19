@@ -64,7 +64,7 @@ object DismantleConfirmer {
     private fun textsOf(container: AccessibilityNodeInfo): List<String> {
         val out = mutableListOf<String>()
         for (n in NodeTools.collect(container, MAX_CONTAINER_NODES + 5) { true }) {
-            val t = n.text?.toString() ?: n.contentDescription?.toString()
+            val t = listOf(n.text?.toString(), n.contentDescription?.toString()).firstOrNull { !it.isNullOrBlank() }
             if (!t.isNullOrBlank()) out.add(t)
         }
         return out

@@ -68,6 +68,7 @@ object FarmController {
     private const val ZOO_COMMAND = "owo zoo"
     private const val DAILY_COMMAND = "owo daily"
     private const val QUEST_COMMAND = "owo quest"
+    private const val QUEST_UPGRADE_GAP_MS = 3 * 60 * 60_000L   // mua nang cap Quest Seals toi da 3 gio / lan
 
     // Nhip go lenh
     private const val BURST_MAX = 3                   // toi da 3 lenh trong BURST_WINDOW_MS (OwO bao "Slow down" khi go qua day)
@@ -174,6 +175,7 @@ object FarmController {
         Filler("zoo", "owo zoo")        // zoo: bao pet moi chinh xac
     )
     private var questUiWarned = false
+    @Volatile private var lastUpgradeAtMs = 0L   // lan gan nhat mua nang cap bang Quest Seals
 
     fun isRunning(): Boolean = job?.isActive == true
 
@@ -565,6 +567,26 @@ object FarmController {
                     questUiWarned = true
                     update {
                         it.copy(alert = "⚠️ Không thấy các nút trong Quest Log trên màn hình (Discord có thể không cho app đọc nút). Nhận thưởng nhiệm vụ cần bấm tay")
+                    }
+                }
+                if (res.tabsFound > 0) {
+                    // Khoa quest thuong cao; mua nang cap bang seals toi da 3 gio / lan
+                    val upgradesDue = System.currentTimeMillis() - lastUpgradeAtMs >= QUEST_UPGRADE_GAP_MS
+                    val mgr = try {
+                        QuestManager.manage(service, upgradesDue)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Log.e(TAG, "QuestManager loi: ${e.message}")
+                        null
+                    }
+                    if (mgr != null) {
+                        if (upgradesDue) lastUpgradeAtMs = System.currentTimeMillis() - (if (mgr.note != null) QUEST_UPGRADE_GAP_MS - 30 * 60_000L else 0L)
+                        val parts = mutableListOf<String>()
+                        if (mgr.locked.isNotEmpty()) parts.add("🔒 Đã khóa " + mgr.locked.joinToString("; "))
+                        if (mgr.bought.isNotEmpty()) parts.add("⬆️ Đã nâng cấp: " + mgr.bought.joinToString("; "))
+                        if (mgr.note != null) parts.add("⚠️ Quest: " + mgr.note)
+                        if (parts.isNotEmpty()) update { it.copy(alert = parts.joinToString(" · ")) }
                     }
                 }
             }
