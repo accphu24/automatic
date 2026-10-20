@@ -43,7 +43,9 @@ object QuestManager {
 
     class Report(val locked: List<String>, val bought: List<String>, val note: String?)
 
-    private class Quest(val index: Int, val locked: Boolean, val done: Boolean, val high: Boolean, val rewardText: String)
+    private class Quest(val index: Int, val locked: Boolean, val done: Boolean, val rank: Int, val rewardText: String) {
+        val high: Boolean get() = rank > 0
+    }
     private class UpRow(val name: String, val level: Int?, val cost: Int?, val enabled: Boolean, val button: AccessibilityNodeInfo?)
 
     // ----------------- tien ich doc man hinh -----------------
@@ -111,13 +113,29 @@ object QuestManager {
             val bar = t.indexOfFirst { it == '▰' || it == '▱' }
             val seg = if (bar > rStart) t.substring(rStart, bar) else t.substring(rStart)
             val rewards = REWARD.findAll(seg).map { it.groupValues[1].lowercase() }.toList()
-            val high = rewards.any { it.contains("shard") || it.contains("crate") || it == "ws" || it == "azws" }
+            // Uu tien cua Ruby: weapon shard (3) > crate (2) > lootbox (1) > cowoncy (0, khong co gia tri)
+            val rank = when {
+                rewards.any { it.contains("shard") || it == "ws" || it == "azws" } -> 3
+                rewards.any { it.contains("crate") } -> 2
+                rewards.any { it.contains("box") } -> 1
+                else -> 0
+            }
             val prog = PROGRESS.find(t.trim())
             val done = prog != null &&
                 (prog.groupValues[1].replace(",", "").toLongOrNull() ?: 0L) >= (prog.groupValues[2].replace(",", "").toLongOrNull() ?: Long.MAX_VALUE)
-            out.add(Quest(index, locked, done, high, seg.removePrefix("Reward:").trim()))
+            out.add(Quest(index, locked, done, rank, seg.removePrefix("Reward:").trim()))
         }
         return out
+    }
+
+    /**
+     * Cac quest DA XONG nhung chi co thuong cowoncy (khong shard/crate/lootbox) -> Ruby khong muon claim, tu quyet
+     * dinh roll hay giu. Goi khi man hinh dang o tab Quests. Tra ve so thu tu quest.
+     */
+    fun lowValueDone(service: AutoAccessibilityService): List<Int> {
+        val root = service.rootInActiveWindow ?: return emptyList()
+        val anchor = anchorTop(root) ?: return emptyList()
+        return readQuests(root, anchor).filter { it.done && !it.locked && it.rank == 0 }.map { it.index }
     }
 
     // ----------------- 1) khoa quest thuong cao -----------------
@@ -186,7 +204,7 @@ object QuestManager {
         for (i in 1..MAX_LOCKS_PER_RUN) {
             val root = service.rootInActiveWindow ?: return done
             val anchor = anchorTop(root) ?: return done
-            val target = readQuests(root, anchor).firstOrNull { it.high && !it.locked && !it.done } ?: return done
+            val target = readQuests(root, anchor).filter { it.high && !it.locked && !it.done }.maxByOrNull { it.rank } ?: return done
             if (!lockOne(service, target.index)) {
                 Log.w(TAG, "Khong khoa duoc quest ${target.index}")
                 return done

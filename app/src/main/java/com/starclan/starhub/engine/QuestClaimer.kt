@@ -16,7 +16,7 @@ import kotlinx.coroutines.delay
 object QuestClaimer {
     private const val TAG = "QuestClaimer"
 
-    data class ClaimResult(val claimed: List<String>, val tabsFound: Int)
+    data class ClaimResult(val claimed: List<String>, val tabsFound: Int, val heldLowValue: List<Int> = emptyList())
 
     private data class Tab(val name: String, val tabLabel: String, val claimLabel: String)
 
@@ -74,6 +74,7 @@ object QuestClaimer {
     suspend fun claimAll(service: AutoAccessibilityService): ClaimResult {
         val claimed = mutableListOf<String>()
         var tabsFound = 0
+        var held: List<Int> = emptyList()
         for (tab in TABS) {
             val tabNode = findBottomMost(service, tab.tabLabel)
             if (tabNode == null) {
@@ -84,6 +85,15 @@ object QuestClaimer {
             NodeTools.clickNode(service, tabNode)
             delay(1_800)
 
+            // Tab Quests: neu co quest chi thuong cowoncy da xong thi KHONG bam Claim (nut co the nhan luon quest do);
+            // de Ruby tu quyet dinh roll hay giu.
+            if (tab.name == "Quests") {
+                held = QuestManager.lowValueDone(service)
+                if (held.isNotEmpty()) {
+                    Log.i(TAG, "Tab Quests: quest cowoncy da xong $held - khong bam Claim, cho Ruby quyet")
+                    continue
+                }
+            }
             val claimNode = findBottomMost(service, tab.claimLabel)
             if (claimNode == null) {
                 Log.i(TAG, "Tab ${tab.name}: khong thay nut nhan thuong")
@@ -99,6 +109,6 @@ object QuestClaimer {
                 delay(2_000)
             }
         }
-        return ClaimResult(claimed, tabsFound)
+        return ClaimResult(claimed, tabsFound, held)
     }
 }

@@ -569,6 +569,9 @@ object FarmController {
                         it.copy(alert = "⚠️ Không thấy các nút trong Quest Log trên màn hình (Discord có thể không cho app đọc nút). Nhận thưởng nhiệm vụ cần bấm tay")
                     }
                 }
+                if (res.heldLowValue.isNotEmpty()) {
+                    update { it.copy(alert = "💤 Quest " + res.heldLowValue.joinToString(", ") + " chỉ thưởng cowoncy, đã xong nhưng KHÔNG claim — bạn quyết roll hay giữ") }
+                }
                 if (res.tabsFound > 0) {
                     // Khoa quest thuong cao; mua nang cap bang seals toi da 3 gio / lan
                     val upgradesDue = System.currentTimeMillis() - lastUpgradeAtMs >= QUEST_UPGRADE_GAP_MS
