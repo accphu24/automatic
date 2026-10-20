@@ -21,6 +21,9 @@ import kotlinx.coroutines.delay
 object QuestManager {
     private const val TAG = "QuestManager"
     private const val MAX_LOCKS_PER_RUN = 3
+    // Tat tu khoa: nut Claim o tab Quests BO QUA quest da khoa, nen quest thuong cao bi app khoa se khong duoc claim khi xong
+    // (chua co luong Unlock). Ruby tu quyet roll/giu/khoa. Bat lai bang true neu sau nay co luong mo khoa.
+    private const val AUTO_LOCK = false
     private const val UPGRADE_MAX_COST = 400
     private const val UPGRADE_MAX_BUYS = 25
 
@@ -136,6 +139,13 @@ object QuestManager {
         val root = service.rootInActiveWindow ?: return emptyList()
         val anchor = anchorTop(root) ?: return emptyList()
         return readQuests(root, anchor).filter { it.done && !it.locked && it.rank == 0 }.map { it.index }
+    }
+
+    /** Quest thuong cao (shard/crate/lootbox) DA XONG nhung dang KHOA -> nut Claim se bo qua, can mo khoa tay. */
+    fun lockedHighDone(service: AutoAccessibilityService): List<Int> {
+        val root = service.rootInActiveWindow ?: return emptyList()
+        val anchor = anchorTop(root) ?: return emptyList()
+        return readQuests(root, anchor).filter { it.done && it.locked && it.rank > 0 }.map { it.index }
     }
 
     // ----------------- 1) khoa quest thuong cao -----------------
@@ -337,7 +347,7 @@ object QuestManager {
         val bought = mutableListOf<String>()
         var note: String? = null
         try {
-            locked += lockHighValue(service)
+            if (AUTO_LOCK) locked += lockHighValue(service)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

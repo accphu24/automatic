@@ -16,7 +16,7 @@ import kotlinx.coroutines.delay
 object QuestClaimer {
     private const val TAG = "QuestClaimer"
 
-    data class ClaimResult(val claimed: List<String>, val tabsFound: Int, val heldLowValue: List<Int> = emptyList())
+    data class ClaimResult(val claimed: List<String>, val tabsFound: Int, val heldLowValue: List<Int> = emptyList(), val lockedDone: List<Int> = emptyList())
 
     private data class Tab(val name: String, val tabLabel: String, val claimLabel: String)
 
@@ -75,6 +75,7 @@ object QuestClaimer {
         val claimed = mutableListOf<String>()
         var tabsFound = 0
         var held: List<Int> = emptyList()
+        var lockedDone: List<Int> = emptyList()
         for (tab in TABS) {
             val tabNode = findBottomMost(service, tab.tabLabel)
             if (tabNode == null) {
@@ -88,6 +89,7 @@ object QuestClaimer {
             // Tab Quests: neu co quest chi thuong cowoncy da xong thi KHONG bam Claim (nut co the nhan luon quest do);
             // de Ruby tu quyet dinh roll hay giu.
             if (tab.name == "Quests") {
+                lockedDone = QuestManager.lockedHighDone(service)
                 held = QuestManager.lowValueDone(service)
                 if (held.isNotEmpty()) {
                     Log.i(TAG, "Tab Quests: quest cowoncy da xong $held - khong bam Claim, cho Ruby quyet")
@@ -109,6 +111,6 @@ object QuestClaimer {
                 delay(2_000)
             }
         }
-        return ClaimResult(claimed, tabsFound, held)
+        return ClaimResult(claimed, tabsFound, held, lockedDone)
     }
 }

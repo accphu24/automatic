@@ -569,6 +569,9 @@ object FarmController {
                         it.copy(alert = "⚠️ Không thấy các nút trong Quest Log trên màn hình (Discord có thể không cho app đọc nút). Nhận thưởng nhiệm vụ cần bấm tay")
                     }
                 }
+                if (res.lockedDone.isNotEmpty()) {
+                    update { it.copy(alert = "🔒 Quest " + res.lockedDone.joinToString(", ") + " đã xong nhưng đang KHÓA nên Claim bỏ qua — mở khóa để nhận thưởng") }
+                }
                 if (res.heldLowValue.isNotEmpty()) {
                     update { it.copy(alert = "💤 Quest " + res.heldLowValue.joinToString(", ") + " chỉ thưởng cowoncy, đã xong nhưng KHÔNG claim — bạn quyết roll hay giữ") }
                 }
