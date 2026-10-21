@@ -526,14 +526,16 @@ object FarmController {
         sender: DiscordSender,
         settings: OwoTrackerPrefs.Settings,
         key: String,
-        commands: List<String>
+        commands: List<String>,
+        minGapMs: Long = 2_500L,
+        maxGapMs: Long = 5_000L
     ): SendResult {
         choreAt[key] = System.currentTimeMillis()
         for ((i, cmd) in commands.withIndex()) {
             update { it.copy(status = "Làm việc vặt: $cmd") }
             val r = sendCommand(sender, settings, cmd)
             if (r != SendResult.OK) return r
-            if (i < commands.size - 1) delay(Random.nextLong(2_500L, 5_000L))
+            if (i < commands.size - 1) delay(Random.nextLong(minGapMs, maxGapMs))
         }
         return SendResult.OK
     }
@@ -714,7 +716,10 @@ object FarmController {
             if (ready(key)) {
                 pool += Chore(key) {
                     val cmds = QuestAuto.commandsFor(job.kind, minOf(job.remaining, QuestAuto.BURST.toLong()).toInt())
-                    val r = runChoreCommands(sender, settings, "quest_" + job.kind.key, cmds)
+                    // Say owo co cooldown toi thieu 10 giay giua 2 lan -> cach nhau 10,5-13 giay; loai khac giu nhip thuong
+                    val gapMin = if (job.kind == QuestAuto.Kind.SAY) QuestAuto.SAY_GAP_MIN_MS else 2_500L
+                    val gapMax = if (job.kind == QuestAuto.Kind.SAY) QuestAuto.SAY_GAP_MAX_MS else 5_000L
+                    val r = runChoreCommands(sender, settings, "quest_" + job.kind.key, cmds, gapMin, gapMax)
                     if (r == SendResult.OK) questSent[job.kind] = (questSent[job.kind] ?: 0) + cmds.size
                     r
                 }

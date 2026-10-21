@@ -19,6 +19,9 @@ object QuestAuto {
     const val GAMBLE_BET = 1
     /** Lenh gamble dung de lam quest. */
     const val GAMBLE_COMMAND = "owo cf"
+    /** Say owo co cooldown toi thieu 10 giay giua 2 lan -> khoang cach giua 2 lenh `owo` (ms). */
+    const val SAY_GAP_MIN_MS = 10_500L
+    const val SAY_GAP_MAX_MS = 13_000L
     /** Toi da bao nhieu lenh moi dot viec vat (tranh go dai 1 mach). */
     const val BURST = 4
 
