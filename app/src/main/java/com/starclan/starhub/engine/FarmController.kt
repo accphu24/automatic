@@ -69,6 +69,7 @@ object FarmController {
     private const val DAILY_COMMAND = "owo daily"
     private const val QUEST_COMMAND = "owo quest"
     private const val QUEST_UPGRADE_GAP_MS = 3 * 60 * 60_000L   // mua nang cap Quest Seals toi da 3 gio / lan
+    private const val QUEST_AUTO_UPGRADE = false   // Ruby khong can app tu mua nang cap bang seals
 
     // Nhip go lenh
     private const val BURST_MAX = 3                   // toi da 3 lenh trong BURST_WINDOW_MS (OwO bao "Slow down" khi go qua day)
@@ -577,7 +578,7 @@ object FarmController {
                 }
                 if (res.tabsFound > 0) {
                     // Khoa quest thuong cao; mua nang cap bang seals toi da 3 gio / lan
-                    val upgradesDue = System.currentTimeMillis() - lastUpgradeAtMs >= QUEST_UPGRADE_GAP_MS
+                    val upgradesDue = QUEST_AUTO_UPGRADE && System.currentTimeMillis() - lastUpgradeAtMs >= QUEST_UPGRADE_GAP_MS
                     val mgr = try {
                         QuestManager.manage(service, upgradesDue)
                     } catch (e: CancellationException) {
