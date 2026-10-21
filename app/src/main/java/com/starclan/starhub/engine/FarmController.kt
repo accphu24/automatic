@@ -176,6 +176,9 @@ object FarmController {
         Filler("zoo", "owo zoo")        // zoo: bao pet moi chinh xac
     )
     private var questUiWarned = false
+    // Quest tu lam (Say owo / Gamble / Action): so lenh da go ke tu lan bot ghi nhan tien do quest gan nhat
+    private val questSent = mutableMapOf<QuestAuto.Kind, Int>()
+    private var lastQuestAgeSec = Long.MAX_VALUE
     @Volatile private var lastUpgradeAtMs = 0L   // lan gan nhat mua nang cap bang Quest Seals
 
     fun isRunning(): Boolean = job?.isActive == true
@@ -700,6 +703,24 @@ object FarmController {
             pool += Chore("quest") { claimQuests(service, sender, settings) }
         }
 
+        // Quest tu lam duoc (Say owo / Gamble / Action): chi go 1 dot nho moi lan, theo tien do bot da ghi
+        val questAge = hub?.quest?.ageSeconds
+        if (questAge != null) {
+            if (questAge < lastQuestAgeSec) questSent.clear()   // bot vua ghi nhan tien do moi -> dem lai tu dau
+            lastQuestAgeSec = questAge
+        }
+        for (job in QuestAuto.jobs(hub?.quest?.quests, questSent)) {
+            val key = "qa_" + job.kind.key
+            if (ready(key)) {
+                pool += Chore(key) {
+                    val cmds = QuestAuto.commandsFor(job.kind, minOf(job.remaining, QuestAuto.BURST.toLong()).toInt())
+                    val r = runChoreCommands(sender, settings, "quest_" + job.kind.key, cmds)
+                    if (r == SendResult.OK) questSent[job.kind] = (questSent[job.kind] ?: 0) + cmds.size
+                    r
+                }
+            }
+        }
+
         // Lenh kiem tra nhe
         for (f in FILLERS) {
             if (ready(f.key)) {
@@ -790,6 +811,8 @@ object FarmController {
         choreAt["wait_zoo"] = System.currentTimeMillis()   // zoo vua duoc go o buoc "Check zoo luc bat dau"
         silentRecoverRequested = false
         questUiWarned = false
+        questSent.clear()
+        lastQuestAgeSec = Long.MAX_VALUE
         lastSendOkAtMs = 0L
         silenceBaselineMs = System.currentTimeMillis()
         update {
