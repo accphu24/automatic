@@ -2,8 +2,8 @@ package com.starclan.starhub.data
 
 /** Cach sap xep danh sach Pet Dex. DEFAULT = giu thu tu bot gui (loai dang co xep truoc). */
 enum class DexSort(val label: String) {
-    DEFAULT("Mặc định"), TOTAL("Tổng"), HP("HP"), ATT("ATT"), MAG("MAG"),
-    PR("PR"), MR("MR"), WP("WP"), NAME("Tên A-Z")
+    DEFAULT("Mặc định"), TOTAL("Tổng"), HP("HP"), WP("WP"), ATT("ATT"), MAG("MAG"),
+    PR("PR"), MR("MR"), NAME("Tên A-Z")
 }
 
 /** Loc theo viec nguoi choi co loai do hay chua. */
@@ -64,7 +64,7 @@ object HubDexQuery {
 
     /** Dong 6 chi so. Khi dang xep theo 1 chi so thi dua chi so do len dau va danh dau ▸. */
     fun statsLine(p: HubPetDexEntry, sort: DexSort): String {
-        val stats = listOf("HP" to p.hp, "ATT" to p.att, "PR" to p.pr, "WP" to p.wp, "MAG" to p.mag, "MR" to p.mr)
+        val stats = listOf("HP" to p.hp, "WP" to p.wp, "ATT" to p.att, "MAG" to p.mag, "PR" to p.pr, "MR" to p.mr)
         val focus = when (sort) {
             DexSort.HP -> "HP"
             DexSort.ATT -> "ATT"

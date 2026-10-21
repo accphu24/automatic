@@ -8,8 +8,4 @@
         android:id="@+id/navSettings"
         android:icon="@drawable/ic_tab_settings"
         android:title="@string/tab_settings" />
-    <item
-        android:id="@+id/navAutomatic"
-        android:icon="@drawable/ic_tab_automatic"
-        android:title="@string/tab_automatic" />
 </menu>

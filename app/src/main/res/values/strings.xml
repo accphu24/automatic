@@ -127,4 +127,6 @@
     <string name="tab_hub">Hub</string>
     <string name="tab_settings">Cài đặt</string>
     <string name="tab_automatic">Tự động</string>
+    <string name="section_gem_tiers">Tier gem được dùng</string>
+    <string name="note_gem_tiers">Với mỗi loại gem, bấm vào tier để BẬT (tím) / TẮT (viền). Khi gem hết độ bền, bot chỉ chọn thay bằng viên thuộc tier đang bật. Lưu trên bot, áp dụng ngay.</string>
 </resources>

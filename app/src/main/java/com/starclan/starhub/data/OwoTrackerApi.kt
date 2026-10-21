@@ -39,7 +39,7 @@ data class AlertInfo(
 
 /** Ket qua goi GET /hub — tach ro thanh cong / that bai de man hinh Hub bao loi cho de hieu. */
 sealed class HubResult {
-    data class Success(val hub: HubResponse) : HubResult()
+    data class Success(val hub: HubResponse, val raw: String? = null) : HubResult()
     data class Failure(val message: String) : HubResult()
 }
 
@@ -103,7 +103,7 @@ object OwoTrackerApi {
             if (body.isBlank()) {
                 HubResult.Failure("Bot trả về dữ liệu trống")
             } else {
-                HubResult.Success(HubParser.parse(body))
+                HubResult.Success(HubParser.parse(body), body)
             }
         } catch (e: JsonParseException) {
             Log.w(TAG, "fetchHub doc JSON loi: ${e.message}")
@@ -190,6 +190,58 @@ object OwoTrackerApi {
                 if (conn.responseCode == 200) enabled else null
             } catch (e: Exception) {
                 Log.w(TAG, "setEventMode loi: ${e.message}")
+                null
+            }
+        }
+
+    /** Cai dat tier gem cua 1 loai gem: tier nao dang BAT. */
+    data class GemTierSlot(val slot: String, val name: String, val tiers: List<Pair<String, Boolean>>)
+
+    private fun parseGemTiers(body: String): List<GemTierSlot>? = try {
+        val slots = org.json.JSONObject(body).getJSONArray("slots")
+        (0 until slots.length()).map { i ->
+            val o = slots.getJSONObject(i)
+            val ts = o.getJSONArray("tiers")
+            GemTierSlot(
+                o.getString("slot"), o.getString("name"),
+                (0 until ts.length()).map { j -> ts.getJSONObject(j).let { it.getString("tier") to it.getBoolean("enabled") } }
+            )
+        }
+    } catch (e: Exception) {
+        null
+    }
+
+    /** Doc cai dat tier gem tu bot (GET /gem-tiers). null = khong doc duoc (mang loi / bot chua cap nhat). */
+    suspend fun fetchGemTiers(apiUrl: String, token: String): List<GemTierSlot>? = withContext(Dispatchers.IO) {
+        try {
+            val conn = URL(joinUrl(apiUrl, "/gem-tiers")).openConnection() as HttpURLConnection
+            conn.requestMethod = "GET"
+            conn.setRequestProperty("Authorization", "Bearer $token")
+            conn.connectTimeout = 8_000
+            conn.readTimeout = 8_000
+            if (conn.responseCode != 200) null else parseGemTiers(conn.inputStream.bufferedReader().readText())
+        } catch (e: Exception) {
+            Log.w(TAG, "fetchGemTiers loi: ${e.message}")
+            null
+        }
+    }
+
+    /** Bat/tat 1 tier cua 1 loai gem (POST /gem-tiers). Tra ve cai dat moi nhat, hoac null neu that bai. */
+    suspend fun setGemTier(apiUrl: String, token: String, slot: String, tier: String, enabled: Boolean): List<GemTierSlot>? =
+        withContext(Dispatchers.IO) {
+            try {
+                val conn = URL(joinUrl(apiUrl, "/gem-tiers")).openConnection() as HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.setRequestProperty("Authorization", "Bearer $token")
+                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                conn.doOutput = true
+                conn.connectTimeout = 8_000
+                conn.readTimeout = 8_000
+                val body = org.json.JSONObject().put("slot", slot).put("tier", tier).put("enabled", enabled).toString()
+                conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+                if (conn.responseCode != 200) null else parseGemTiers(conn.inputStream.bufferedReader().readText())
+            } catch (e: Exception) {
+                Log.w(TAG, "setGemTier loi: ${e.message}")
                 null
             }
         }

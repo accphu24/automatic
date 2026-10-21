@@ -12,7 +12,14 @@ import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.view.Gravity
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
+import com.starclan.starhub.data.OwoTrackerApi
 import androidx.fragment.app.Fragment
 import com.starclan.starhub.data.OwoTrackerPrefs
 import com.starclan.starhub.databinding.FragmentSettingsBinding
@@ -155,6 +162,101 @@ class SettingsFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         updateServiceStatus()
+        loadGemTiers()
+    }
+
+    // ----------------- Tier gem (luu tren bot) -----------------
+
+    private fun loadGemTiers() {
+        val s = OwoTrackerPrefs.load(requireContext())
+        if (s.apiUrl.isBlank() || s.token.isBlank()) {
+            binding.tvGemTiersStatus.text = "Nhập địa chỉ API + token ở trên rồi bấm Lưu để chỉnh phần này."
+            binding.llGemTiers.removeAllViews()
+            return
+        }
+        binding.tvGemTiersStatus.text = "Đang tải…"
+        viewLifecycleOwner.lifecycleScope.launch {
+            val slots = OwoTrackerApi.fetchGemTiers(s.apiUrl, s.token)
+            if (_binding == null) return@launch
+            if (slots == null) {
+                binding.tvGemTiersStatus.text = "Không tải được cài đặt tier gem (kiểm tra mạng / bot cần bản mới)."
+                return@launch
+            }
+            binding.tvGemTiersStatus.text = ""
+            renderGemTiers(slots, s.apiUrl, s.token)
+        }
+    }
+
+    private fun dpPx(v: Int): Int = (v * resources.displayMetrics.density).toInt()
+
+    private fun renderGemTiers(slots: List<OwoTrackerApi.GemTierSlot>, apiUrl: String, token: String) {
+        val ctx = requireContext()
+        val violet = ctx.getColor(R.color.brand_violet)
+        val border = ctx.getColor(R.color.border_subtle)
+        val container = binding.llGemTiers
+        container.removeAllViews()
+        for (slot in slots) {
+            val title = TextView(ctx)
+            title.text = "💎 Gem " + (when (slot.slot) {
+                "1" -> "Hunting (săn)"
+                "3" -> "Empowering (tăng lực)"
+                "4" -> "Lucky (may mắn)"
+                else -> "Special (sự kiện)"
+            })
+            title.textSize = 14f
+            title.setTypeface(title.typeface, Typeface.BOLD)
+            val tlp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            tlp.topMargin = dpPx(16)
+            container.addView(title, tlp)
+
+            for (chunk in slot.tiers.chunked(4)) {
+                val row = LinearLayout(ctx)
+                row.orientation = LinearLayout.HORIZONTAL
+                for ((tier, enabled) in chunk) {
+                    val chip = TextView(ctx)
+                    chip.text = tier
+                    chip.textSize = 13f
+                    chip.gravity = Gravity.CENTER
+                    chip.setPadding(dpPx(6), dpPx(9), dpPx(6), dpPx(9))
+                    fun paint(on: Boolean) {
+                        val bg = GradientDrawable()
+                        bg.cornerRadius = dpPx(16).toFloat()
+                        bg.setColor(if (on) violet else android.graphics.Color.TRANSPARENT)
+                        bg.setStroke(dpPx(1), if (on) violet else border)
+                        chip.background = bg
+                        chip.setTextColor(if (on) android.graphics.Color.WHITE else binding.tvGemTiersStatus.textColors.defaultColor)
+                        chip.alpha = if (on) 1f else 0.6f
+                    }
+                    var state = enabled
+                    paint(state)
+                    chip.setOnClickListener {
+                        val want = !state
+                        chip.isEnabled = false
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            val res = OwoTrackerApi.setGemTier(apiUrl, token, slot.slot, tier, want)
+                            if (_binding == null) return@launch
+                            chip.isEnabled = true
+                            if (res == null) {
+                                Toast.makeText(ctx, "Không lưu được lên bot — thử lại", Toast.LENGTH_SHORT).show()
+                            } else {
+                                state = want
+                                paint(state)
+                            }
+                        }
+                    }
+                    val lp = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                    lp.marginEnd = dpPx(6)
+                    row.addView(chip, lp)
+                }
+                // hang cuoi it hon 4 chip: them o trong de chip khong gian rong qua muc
+                repeat(4 - chunk.size) {
+                    row.addView(android.view.View(ctx), LinearLayout.LayoutParams(0, 1, 1f).also { it.marginEnd = dpPx(6) })
+                }
+                val rlp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                rlp.topMargin = dpPx(8)
+                container.addView(row, rlp)
+            }
+        }
     }
 
     override fun onDestroyView() {

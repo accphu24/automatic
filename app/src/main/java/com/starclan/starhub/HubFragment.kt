@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.starclan.starhub.data.DexFilter
 import com.starclan.starhub.data.DexSort
+import com.starclan.starhub.data.HubCache
 import com.starclan.starhub.data.HubDexQuery
 import com.starclan.starhub.data.HubFormat
 import com.starclan.starhub.data.HubGems
@@ -36,7 +37,6 @@ import com.starclan.starhub.data.inventoryCardIcon
 import com.starclan.starhub.data.petDexCardIcon
 import com.starclan.starhub.data.questTileIcon
 import com.starclan.starhub.data.teamCardIcon
-import com.starclan.starhub.data.weaponsCardIcon
 import com.starclan.starhub.data.zooTileIcon
 import com.starclan.starhub.databinding.FragmentHubBinding
 import com.starclan.starhub.databinding.ItemHubCardBinding
@@ -116,7 +116,6 @@ class HubFragment : Fragment() {
             setupCard(KEY_QUEST, binding.cardQuest, R.string.hub_section_quest, R.color.hub_accent_quest),
             setupCard(KEY_TEAM, binding.cardTeam, R.string.hub_section_team, R.color.hub_accent_team),
             setupCard(KEY_ZOO, binding.cardZoo, R.string.hub_section_zoo, R.color.hub_accent_zoo),
-            setupCard(KEY_WEAPONS, binding.cardWeapons, R.string.hub_section_weapons, R.color.hub_accent_weapons),
             setupCard(KEY_INVENTORY, binding.cardInventory, R.string.hub_section_inventory, R.color.hub_accent_inventory),
             setupCard(KEY_PET_DEX, binding.cardPetDex, R.string.hub_section_pet_dex, R.color.hub_accent_pet_dex)
         )
@@ -128,10 +127,31 @@ class HubFragment : Fragment() {
             applyTile(t, loading)
         }
 
+        showCachedHub()
+
         binding.btnHubRefresh.setOnClickListener {
             EmojiImageLoader.retryFailed()
             viewLifecycleOwner.lifecycleScope.launch { loadHub() }
         }
+    }
+
+    /** Mo app: hien NGAY ban Hub luu lan truoc (neu co) trong luc tai ban moi — khong de man hinh trong 2-3 giay. */
+    private fun showCachedHub() {
+        if (hub != null) return
+        val cached = HubCache.load(requireContext()) ?: return
+        val parsed = try {
+            com.starclan.starhub.data.HubParser.parse(cached.raw)
+        } catch (e: Exception) {
+            return
+        }
+        val ageMs = (System.currentTimeMillis() - cached.savedAtMs).coerceAtLeast(0L)
+        hub = parsed
+        fetchedAtMs = SystemClock.elapsedRealtime() - ageMs   // thoi gian "X phut truoc" tinh tiep tu luc luu
+        tileGeneration++
+        val clock = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(cached.savedAtMs))
+        binding.tvHubStatus.text = "Dữ liệu cũ (lưu lúc $clock) — đang cập nhật…"
+        renderBodies()
+        renderTimed()
     }
 
     private fun setupCard(key: String, ui: ItemHubCardBinding, titleRes: Int, accentRes: Int): Card {
@@ -202,6 +222,7 @@ class HubFragment : Fragment() {
         when (val result = OwoTrackerApi.fetchHub(settings.apiUrl, settings.token)) {
             is HubResult.Success -> {
                 hub = result.hub
+                result.raw?.let { raw -> context?.let { HubCache.save(it, raw) } }
                 fetchedAtMs = SystemClock.elapsedRealtime()
                 tileGeneration++
                 val clock = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
@@ -255,7 +276,6 @@ class HubFragment : Fragment() {
         KEY_QUEST -> HubSummary.questLine(h.quest)
         KEY_TEAM -> HubSummary.teamLine(h.team)
         KEY_ZOO -> HubSummary.zooLine(h.zoo)
-        KEY_WEAPONS -> HubSummary.weaponsLine(h.weapons)
         KEY_INVENTORY -> HubSummary.inventoryLine(h.inventory)
         else -> HubSummary.petDexLine(h.petDex)
     }
@@ -265,7 +285,6 @@ class HubFragment : Fragment() {
         KEY_QUEST -> questTileIcon(h.quest)
         KEY_TEAM -> teamCardIcon(h.team)
         KEY_ZOO -> zooTileIcon(h.zoo)
-        KEY_WEAPONS -> weaponsCardIcon()
         KEY_INVENTORY -> inventoryCardIcon()
         else -> petDexCardIcon(h.petDex)
     }
@@ -279,7 +298,6 @@ class HubFragment : Fragment() {
                 fillZooChart(body, h.zoo)
                 addText(body, HubFormat.zoo(h.zoo, true), topDp = 12)
             }
-            KEY_WEAPONS -> addText(body, HubFormat.weapons(h.weapons, true))
             KEY_INVENTORY -> addText(body, HubFormat.inventory(h.inventory, true))
             else -> fillPetDex(body, h.petDex)
         }
@@ -446,7 +464,6 @@ class HubFragment : Fragment() {
         setCardAge(KEY_QUEST, h.quest?.ageSeconds, elapsed)
         setCardAge(KEY_TEAM, h.team?.ageSeconds, elapsed)
         setCardAge(KEY_ZOO, h.zoo?.ageSeconds, elapsed)
-        setCardAge(KEY_WEAPONS, h.weapons?.ageSeconds, elapsed)
         setCardAge(KEY_INVENTORY, h.inventory?.ageSeconds, elapsed)
         setCardAge(KEY_PET_DEX, h.petDex?.ageSeconds, elapsed)
     }
@@ -670,7 +687,6 @@ class HubFragment : Fragment() {
         private const val KEY_QUEST = "quest"
         private const val KEY_TEAM = "team"
         private const val KEY_ZOO = "zoo"
-        private const val KEY_WEAPONS = "weapons"
         private const val KEY_INVENTORY = "inventory"
         private const val KEY_PET_DEX = "pet_dex"
         private const val DEX_PAGE_SIZE = 30
